@@ -1,4 +1,22 @@
+# Core
 fastapi
 uvicorn
+
+# Graph DB
+neo4j
+py2neo
+
+# Data handling
+pandas
+lxml
+beautifulsoup4
+tqdm
+requests
+
+# Search index
+elasticsearch
+
+# Utils
+python-dotenv
 pytest
 
