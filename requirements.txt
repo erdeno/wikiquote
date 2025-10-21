@@ -1,0 +1,10 @@
+Django>=5.0
+djangorestframework>=3.15
+neo4j
+pandas
+lxml
+beautifulsoup4
+tqdm
+requests
+python-dotenv
+pytest
