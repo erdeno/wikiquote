@@ -1,10 +1,8 @@
 .env
-<<<<<<< HEAD
 venv/
 data/
 migrations/
 __pycache__/
 db.sqlite3
-=======
 data/
->>>>>>> origin/main
+pretrained_models/
