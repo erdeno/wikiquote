@@ -1,33 +1,17 @@
-<<<<<<< HEAD
 Django>=5.0
 djangorestframework>=3.15
 neo4j
-=======
-# Core
 fastapi
 uvicorn
-
-# Graph DB
 neo4j
 py2neo
-
-# Data handling
->>>>>>> origin/main
 pandas
 lxml
 beautifulsoup4
 tqdm
 requests
-<<<<<<< HEAD
 python-dotenv
 pytest
-=======
-
-# Search index
 elasticsearch
-
-# Utils
 python-dotenv
 pytest
-
->>>>>>> origin/main
