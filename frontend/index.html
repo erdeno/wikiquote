@@ -636,6 +636,9 @@
                     try {
                         const response = await fetch(`${this.apiUrl}/voice/query/`, {
                             method: 'POST',
+                            headers: {
+                                'Authorization': `Token ${this.authToken}`
+                            },
                             body: formData,
                         });
 
@@ -675,7 +678,11 @@
                     try {
                         // Search for quote
                         const searchResponse = await fetch(
-                            `${this.apiUrl}/quotes/search/?q=${encodeURIComponent(this.textQuery)}`
+                            `${this.apiUrl}/quotes/search/?q=${encodeURIComponent(this.textQuery)}`, {
+                                headers: {
+                                    'Authorization': `Token ${this.authToken}`
+                                }
+                            }
                         );
                         const searchData = await searchResponse.json();
 

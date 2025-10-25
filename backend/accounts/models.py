@@ -14,6 +14,20 @@ class UserProfile(models.Model):
     voice_embedding_file = models.CharField(max_length=255, blank=True, null=True)
     
     # TTS preferences
+    VOICE_CHOICES = [
+        ('male_1', 'Male Voice 1'),
+        ('male_2', 'Male Voice 2'),
+        ('male_3', 'Male Voice 3'),
+        ('female_1', 'Female Voice 1'),
+        ('female_2', 'Female Voice 2'),
+        ('female_3', 'Female Voice 3'),
+    ]
+    
+    tts_voice_type = models.CharField(
+        max_length=20, 
+        choices=VOICE_CHOICES, 
+        default='female_1'
+    )
     tts_pitch = models.FloatField(default=1.0)
     tts_speed = models.FloatField(default=1.0)
     tts_energy = models.FloatField(default=1.0)

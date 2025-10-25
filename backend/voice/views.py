@@ -165,6 +165,7 @@ def synthesize_speech(request):
     """TTS endpoint: convert text to speech"""
     text = request.data.get('text')
     speaker_id = request.data.get('speaker_id')
+    voice_type = request.data.get('voice_type')  # NEW
     
     if not text:
         return Response(
@@ -174,7 +175,11 @@ def synthesize_speech(request):
     
     try:
         tts = get_tts_service()
-        audio_bytes = tts.synthesize_to_bytes(text, speaker_id=speaker_id)
+        audio_bytes = tts.synthesize_to_bytes(
+            text, 
+            speaker_id=speaker_id,
+            voice_type=voice_type  # NEW
+        )
         
         if audio_bytes:
             response = HttpResponse(audio_bytes, content_type='audio/wav')
@@ -187,6 +192,8 @@ def synthesize_speech(request):
             )
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -280,10 +287,99 @@ def voice_query(request):
         )
 
 
+# Add this new endpoint
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_available_voices(request):
+    """Get list of available TTS voices"""
+    try:
+        tts = get_tts_service()
+        voices = tts.get_available_voices()
+        
+        return Response({
+            'success': True,
+            'voices': voices
+        })
+    
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# Update register_speaker to include voice_type
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def register_speaker(request):
+    """Register authenticated user's voice"""
+    if 'audio' not in request.FILES:
+        return Response(
+            {'error': 'Missing audio file'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
+    
+    audio_file = request.FILES['audio']
+    user = request.user
+    speaker_id = user.username
+    
+    # Get TTS preferences including voice type
+    voice_type = request.data.get('voice_type', 'female_1')
+    pitch = float(request.data.get('pitch', 1.0))
+    speed = float(request.data.get('speed', 1.0))
+    energy = float(request.data.get('energy', 1.0))
+    
+    try:
+        speaker_svc = get_speaker_service()
+        audio_bytes = audio_file.read()
+        
+        success = speaker_svc.register_speaker(speaker_id, audio_bytes)
+        
+        if success:
+            # Update user profile
+            profile = user.profile
+            profile.voice_registered = True
+            profile.tts_voice_type = voice_type
+            profile.tts_pitch = pitch
+            profile.tts_speed = speed
+            profile.tts_energy = energy
+            profile.save()
+            
+            # Set TTS preferences
+            tts = get_tts_service()
+            tts.set_user_preferences(speaker_id, voice_type, pitch, speed, energy)
+            
+            return Response({
+                'success': True,
+                'message': f'Voice registered successfully for {user.username}',
+                'preferences': {
+                    'voice_type': voice_type,
+                    'pitch': pitch,
+                    'speed': speed,
+                    'energy': energy
+                }
+            })
+        else:
+            return Response(
+                {'error': 'Registration failed'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+    
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )
+
+
+# Update set_tts_preferences
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def set_tts_preferences(request):
     """Set TTS preferences for authenticated user"""
+    voice_type = request.data.get('voice_type', 'female_1')
     pitch = float(request.data.get('pitch', 1.0))
     speed = float(request.data.get('speed', 1.0))
     energy = float(request.data.get('energy', 1.0))
@@ -293,6 +389,7 @@ def set_tts_preferences(request):
     try:
         # Update profile
         profile = user.profile
+        profile.tts_voice_type = voice_type
         profile.tts_pitch = pitch
         profile.tts_speed = speed
         profile.tts_energy = energy
@@ -300,12 +397,13 @@ def set_tts_preferences(request):
         
         # Update TTS service
         tts = get_tts_service()
-        tts.set_user_preferences(user.username, pitch, speed, energy)
+        tts.set_user_preferences(user.username, voice_type, pitch, speed, energy)
         
         return Response({
             'success': True,
             'message': f'TTS preferences updated for {user.username}',
             'preferences': {
+                'voice_type': voice_type,
                 'pitch': pitch,
                 'speed': speed,
                 'energy': energy
@@ -319,6 +417,7 @@ def set_tts_preferences(request):
         )
 
 
+# Update get_tts_preferences
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_tts_preferences(request):
@@ -329,8 +428,28 @@ def get_tts_preferences(request):
     return Response({
         'success': True,
         'preferences': {
+            'voice_type': profile.tts_voice_type,
             'pitch': profile.tts_pitch,
             'speed': profile.tts_speed,
             'energy': profile.tts_energy
         }
     })
+
+@api_view(['GET'])
+@permission_classes([AllowAny])
+def get_tts_info(request):
+    """Get TTS system information for debugging"""
+    try:
+        tts = get_tts_service()
+        info = tts.get_system_info()
+        
+        return Response({
+            'success': True,
+            'tts_info': info
+        })
+    
+    except Exception as e:
+        return Response(
+            {'error': str(e)},
+            status=status.HTTP_500_INTERNAL_SERVER_ERROR
+        )

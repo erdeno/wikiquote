@@ -6,6 +6,9 @@ from typing import Dict, Optional, List
 import os
 import tempfile
 import json
+import soundfile as sf
+import io
+import subprocess
 
 class SpeakerIdentifier:
     """
@@ -66,8 +69,40 @@ class SpeakerIdentifier:
     
     def extract_embedding_bytes(self, audio_bytes: bytes) -> np.ndarray:
         """Extract embedding from audio bytes"""
+        
+        # Try to read directly first
+        try:
+            audio_data, sample_rate = sf.read(io.BytesIO(audio_bytes))
+        except Exception as e:
+            print(f"Direct read failed: {e}, trying conversion...")
+            
+            # Convert to WAV if needed
+            with tempfile.NamedTemporaryFile(delete=False, suffix='.webm') as tmp_in:
+                tmp_in.write(audio_bytes)
+                tmp_in.flush()
+                
+                tmp_out = tempfile.NamedTemporaryFile(delete=False, suffix='.wav')
+                tmp_out.close()
+                
+                # Use ffmpeg to convert
+                try:
+                    subprocess.run([
+                        'ffmpeg', '-i', tmp_in.name,
+                        '-ar', '16000',  # Resample to 16kHz
+                        '-ac', '1',       # Mono
+                        '-y',             # Overwrite
+                        tmp_out.name
+                    ], check=True, capture_output=True)
+                    
+                    audio_data, sample_rate = sf.read(tmp_out.name)
+                    
+                finally:
+                    os.unlink(tmp_in.name)
+                    os.unlink(tmp_out.name)
+        
+        # Now process with the loaded audio
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
-            tmp_file.write(audio_bytes)
+            sf.write(tmp_file.name, audio_data, sample_rate)
             tmp_path = tmp_file.name
         
         try:
