@@ -1,6 +1,6 @@
 import torch
 import torchaudio
-from speechbrain.pretrained import EncoderClassifier
+from speechbrain.inference import EncoderClassifier
 import numpy as np
 from typing import Dict, Optional, List
 import os

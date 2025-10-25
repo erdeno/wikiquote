@@ -13,7 +13,7 @@ import base64
 # Import services
 from services.voice.asr.whisper_service import WhisperASR
 from services.voice.speaker_id.ecapa_service import SpeakerIdentifier
-from services.voice.tts.coqui_service import CoquiTTS
+from services.voice.tts.gtts_service import GTTSService
 from .chatbot import QuoteChatbot
 
 # Initialize services (singleton pattern)
@@ -36,7 +36,7 @@ def get_speaker_service():
 def get_tts_service():
     global tts_service
     if tts_service is None:
-        tts_service = CoquiTTS()
+        tts_service = GTTSService()
     return tts_service
 
 
