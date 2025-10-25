@@ -1,17 +1,19 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from django.http import HttpResponse
 from django.conf import settings
+from django.utils import timezone
 import os
 import sys
 import base64
 
 
-# Import NeMo services
+# Import services
 from services.voice.asr.whisper_service import WhisperASR
-from services.voice.speaker_id.titanet_nemo_service import NeMoSpeakerRecognition
-from services.voice.tts.nemo_tts_service import NeMoTTS
+from services.voice.speaker_id.ecapa_service import SpeakerIdentifier
+from services.voice.tts.coqui_service import CoquiTTS
 from .chatbot import QuoteChatbot
 
 # Initialize services (singleton pattern)
@@ -28,21 +30,20 @@ def get_asr_service():
 def get_speaker_service():
     global speaker_service
     if speaker_service is None:
-        speaker_service = NeMoSpeakerRecognition(model_name="titanet_large")
+        speaker_service = SpeakerIdentifier()
     return speaker_service
 
 def get_tts_service():
     global tts_service
     if tts_service is None:
-        tts_service = NeMoTTS(model_type="fastpitch_hifigan")
+        tts_service = CoquiTTS()
     return tts_service
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def transcribe_audio(request):
-    """
-    ASR endpoint: transcribe audio to text
-    """
+    """ASR endpoint: transcribe audio to text"""
     if 'audio' not in request.FILES:
         return Response(
             {'error': 'No audio file provided'},
@@ -71,20 +72,20 @@ def transcribe_audio(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def register_speaker(request):
-    """
-    Register a new speaker with NeMo TitaNet
-    """
-    if 'audio' not in request.FILES or 'speaker_id' not in request.data:
+    """Register authenticated user's voice"""
+    if 'audio' not in request.FILES:
         return Response(
-            {'error': 'Missing audio file or speaker_id'},
+            {'error': 'Missing audio file'},
             status=status.HTTP_400_BAD_REQUEST
         )
     
     audio_file = request.FILES['audio']
-    speaker_id = request.data['speaker_id']
+    user = request.user
+    speaker_id = user.username
     
-    # Optional: TTS preferences
+    # Get TTS preferences
     pitch = float(request.data.get('pitch', 1.0))
     speed = float(request.data.get('speed', 1.0))
     energy = float(request.data.get('energy', 1.0))
@@ -93,26 +94,34 @@ def register_speaker(request):
         speaker_svc = get_speaker_service()
         audio_bytes = audio_file.read()
         
-        # Register speaker
-        result = speaker_svc.register_speaker(speaker_id, audio_bytes)
+        success = speaker_svc.register_speaker(speaker_id, audio_bytes)
         
-        if result['success']:
+        if success:
+            # Update user profile
+            profile = user.profile
+            profile.voice_registered = True
+            profile.tts_pitch = pitch
+            profile.tts_speed = speed
+            profile.tts_energy = energy
+            profile.save()
+            
             # Set TTS preferences
             tts = get_tts_service()
             tts.set_user_preferences(speaker_id, pitch, speed, energy)
             
             return Response({
                 'success': True,
-                'message': f'Speaker {speaker_id} registered successfully',
-                'embedding_dim': result['embedding_dim']
+                'message': f'Voice registered successfully for {user.username}'
             })
         else:
             return Response(
-                {'error': result.get('error', 'Registration failed')},
+                {'error': 'Registration failed'},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
@@ -120,10 +129,9 @@ def register_speaker(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def identify_speaker(request):
-    """
-    Identify speaker from audio using NeMo TitaNet
-    """
+    """Identify speaker from audio"""
     if 'audio' not in request.FILES:
         return Response(
             {'error': 'No audio file provided'},
@@ -131,27 +139,18 @@ def identify_speaker(request):
         )
     
     audio_file = request.FILES['audio']
-    threshold = float(request.data.get('threshold', 0.7))
+    threshold = float(request.data.get('threshold', 0.25))
     
     try:
         speaker_svc = get_speaker_service()
         audio_bytes = audio_file.read()
-        result = speaker_svc.identify_speaker(audio_bytes, threshold)
+        speaker_id = speaker_svc.identify_speaker(audio_bytes, threshold)
         
-        if result:
-            return Response({
-                'success': True,
-                'speaker_id': result['speaker_id'],
-                'confidence': result['confidence'],
-                'identified': True
-            })
-        else:
-            return Response({
-                'success': True,
-                'speaker_id': None,
-                'identified': False,
-                'message': 'No confident match found'
-            })
+        return Response({
+            'success': True,
+            'speaker_id': speaker_id,
+            'identified': speaker_id is not None
+        })
     
     except Exception as e:
         return Response(
@@ -161,12 +160,11 @@ def identify_speaker(request):
 
 
 @api_view(['POST'])
+@permission_classes([AllowAny])
 def synthesize_speech(request):
-    """
-    TTS endpoint using NeMo: convert text to speech
-    """
+    """TTS endpoint: convert text to speech"""
     text = request.data.get('text')
-    speaker_id = request.data.get('speaker_id')  # Optional
+    speaker_id = request.data.get('speaker_id')
     
     if not text:
         return Response(
@@ -196,19 +194,17 @@ def synthesize_speech(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 def list_speakers(request):
-    """
-    List all registered speakers
-    """
+    """List all registered speakers"""
     try:
         speaker_svc = get_speaker_service()
         speakers = speaker_svc.get_registered_speakers()
-        stats = speaker_svc.get_embedding_stats()
         
         return Response({
             'success': True,
             'speakers': speakers,
-            'stats': stats
+            'count': len(speakers)
         })
     
     except Exception as e:
@@ -219,9 +215,10 @@ def list_speakers(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def voice_query(request):
     """
-    Complete voice pipeline with personalized TTS:
+    Complete voice pipeline:
     ASR → Speaker ID → Quote Search → Chatbot → Personalized TTS
     """
     if 'audio' not in request.FILES:
@@ -231,31 +228,36 @@ def voice_query(request):
         )
     
     audio_file = request.FILES['audio']
+    user = request.user
     
     try:
         audio_bytes = audio_file.read()
         
-        # Step 1: Transcribe audio (ASR)
+        # Step 1: Transcribe (ASR)
         asr = get_asr_service()
         transcription_result = asr.transcribe_bytes(audio_bytes)
         user_query = transcription_result['text']
         
         # Step 2: Identify speaker
         speaker_svc = get_speaker_service()
-        speaker_result = speaker_svc.identify_speaker(audio_bytes, threshold=0.7)
-        speaker_id = speaker_result['speaker_id'] if speaker_result else None
-        confidence = speaker_result['confidence'] if speaker_result else 0.0
+        speaker_id = speaker_svc.identify_speaker(audio_bytes, threshold=0.25)
         
         # Step 3: Process query with chatbot
         chatbot = QuoteChatbot()
         chat_result = chatbot.process_query(user_query)
         response_text = chat_result['response']
         
-        # Step 4: Synthesize response with personalized TTS
+        # Step 4: Synthesize with personalized TTS
         tts = get_tts_service()
-        response_audio = tts.synthesize_to_bytes(response_text, speaker_id=speaker_id)
+        response_audio = tts.synthesize_to_bytes(response_text, speaker_id=user.username)
         
-        # Encode audio as base64
+        # Update user statistics
+        profile = user.profile
+        profile.queries_count += 1
+        profile.last_query = timezone.now()
+        profile.save()
+        
+        # Encode audio
         audio_base64 = base64.b64encode(response_audio).decode('utf-8') if response_audio else None
         
         return Response({
@@ -263,8 +265,8 @@ def voice_query(request):
             'transcription': user_query,
             'response_text': response_text,
             'response_audio': audio_base64,
-            'speaker_id': speaker_id,
-            'speaker_confidence': confidence,
+            'identified_speaker': speaker_id,
+            'matches_user': speaker_id == user.username if speaker_id else False,
             'quote_found': chat_result['quote_found'],
             'quote_data': chat_result['quote_data']
         })
@@ -279,28 +281,30 @@ def voice_query(request):
 
 
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def set_tts_preferences(request):
-    """
-    Set TTS preferences for a speaker
-    """
-    speaker_id = request.data.get('speaker_id')
+    """Set TTS preferences for authenticated user"""
     pitch = float(request.data.get('pitch', 1.0))
     speed = float(request.data.get('speed', 1.0))
     energy = float(request.data.get('energy', 1.0))
     
-    if not speaker_id:
-        return Response(
-            {'error': 'speaker_id required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+    user = request.user
     
     try:
+        # Update profile
+        profile = user.profile
+        profile.tts_pitch = pitch
+        profile.tts_speed = speed
+        profile.tts_energy = energy
+        profile.save()
+        
+        # Update TTS service
         tts = get_tts_service()
-        tts.set_user_preferences(speaker_id, pitch, speed, energy)
+        tts.set_user_preferences(user.username, pitch, speed, energy)
         
         return Response({
             'success': True,
-            'message': f'TTS preferences set for {speaker_id}',
+            'message': f'TTS preferences updated for {user.username}',
             'preferences': {
                 'pitch': pitch,
                 'speed': speed,
@@ -316,36 +320,17 @@ def set_tts_preferences(request):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_tts_preferences(request):
-    """
-    Get TTS preferences for a speaker
-    """
-    speaker_id = request.query_params.get('speaker_id')
+    """Get TTS preferences for authenticated user"""
+    user = request.user
+    profile = user.profile
     
-    if not speaker_id:
-        return Response(
-            {'error': 'speaker_id required'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
-    
-    try:
-        tts = get_tts_service()
-        preferences = tts.get_user_preferences(speaker_id)
-        
-        if preferences:
-            return Response({
-                'success': True,
-                'speaker_id': speaker_id,
-                'preferences': preferences
-            })
-        else:
-            return Response({
-                'success': False,
-                'message': f'No preferences found for {speaker_id}'
-            })
-    
-    except Exception as e:
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
+    return Response({
+        'success': True,
+        'preferences': {
+            'pitch': profile.tts_pitch,
+            'speed': profile.tts_speed,
+            'energy': profile.tts_energy
+        }
+    })

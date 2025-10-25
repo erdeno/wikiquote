@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Which Quote? - Login</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Lato:wght@300;400;700&display=swap');
+        
+        body {
+            font-family: 'Lato', sans-serif;
+        }
+        
+        .serif {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .library-bg {
+            background: linear-gradient(135deg, rgba(139, 69, 19, 0.95) 0%, rgba(101, 67, 33, 0.95) 100%),
+                        url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 320"><path fill="%23654321" fill-opacity="0.1" d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,133.3C672,139,768,181,864,181.3C960,181,1056,139,1152,128C1248,117,1344,139,1392,149.3L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"></path></svg>') no-repeat center center;
+            background-size: cover;
+        }
+        
+        .book-spine {
+            background: linear-gradient(to right, #8B4513, #654321);
+            box-shadow: inset -5px 0 10px rgba(0,0,0,0.3);
+        }
+        
+        .page-turn {
+            animation: pageTurn 0.6s ease-in-out;
+        }
+        
+        @keyframes pageTurn {
+            0% { transform: perspective(1000px) rotateY(0deg); }
+            50% { transform: perspective(1000px) rotateY(-90deg); }
+            100% { transform: perspective(1000px) rotateY(0deg); }
+        }
+        
+        .floating {
+            animation: floating 3s ease-in-out infinite;
+        }
+        
+        @keyframes floating {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+        
+        .gold-shimmer {
+            background: linear-gradient(45deg, #d4af37, #f4e5a0, #d4af37);
+            background-size: 200% 200%;
+            animation: shimmer 3s ease infinite;
+        }
+        
+        @keyframes shimmer {
+            0%, 100% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+        }
+        
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .input-field {
+            transition: all 0.3s ease;
+        }
+        
+        .input-field:focus {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(139, 69, 19, 0.2);
+        }
+        
+        .quote-decoration {
+            color: #d4af37;
+            opacity: 0.3;
+            font-size: 120px;
+            position: absolute;
+            font-family: 'Playfair Display', serif;
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <div class="min-h-screen library-bg flex items-center justify-center p-4">
+            <!-- Decorative Quote Marks -->
+            <div class="quote-decoration" style="top: 10%; left: 5%;">"</div>
+            <div class="quote-decoration" style="bottom: 10%; right: 5%; transform: rotate(180deg);">"</div>
+            
+            <div class="w-full max-w-6xl">
+                <div class="grid md:grid-cols-2 gap-8 items-center">
+                    <!-- Left Side - Branding -->
+                    <div class="text-white space-y-6 floating">
+                        <!-- Logo -->
+                        <div class="flex items-center gap-4 mb-8">
+                            <div class="w-16 h-16 bg-amber-600 rounded-lg flex items-center justify-center gold-shimmer">
+                                <i class="fas fa-book-open text-3xl text-white"></i>
+                            </div>
+                            <div>
+                                <h1 class="text-4xl font-bold serif">Which Quote?</h1>
+                                <p class="text-amber-200 text-sm">Wisdom Through Voice</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Featured Quote -->
+                        <div class="space-y-4">
+                            <div class="glass-card rounded-xl p-6 text-gray-800">
+                                <i class="fas fa-quote-left text-amber-600 text-2xl mb-3"></i>
+                                <p class="italic text-lg serif mb-2">
+                                    "A room without books is like a body without a soul."
+                                </p>
+                                <p class="text-sm text-gray-600">— Marcus Tullius Cicero</p>
+                            </div>
+                            
+                            <!-- Library themed decorations -->
+                            <div class="grid grid-cols-3 gap-4">
+                                <div class="book-spine rounded h-32 flex items-center justify-center">
+                                    <i class="fas fa-book text-amber-300 text-3xl"></i>
+                                </div>
+                                <div class="book-spine rounded h-32 flex items-center justify-center">
+                                    <i class="fas fa-bookmark text-amber-300 text-3xl"></i>
+                                </div>
+                                <div class="book-spine rounded h-32 flex items-center justify-center">
+                                    <i class="fas fa-feather-alt text-amber-300 text-3xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Features -->
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-microphone text-amber-300"></i>
+                                <span>Voice-activated quote discovery</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-user-shield text-amber-300"></i>
+                                <span>Personal speaker recognition</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-volume-up text-amber-300"></i>
+                                <span>Customized text-to-speech</span>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <i class="fas fa-brain text-amber-300"></i>
+                                <span>AI-powered wisdom retrieval</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Right Side - Login/Register Form -->
+                    <div class="glass-card rounded-2xl shadow-2xl p-8" :class="{ 'page-turn': isTransitioning }">
+                        <!-- Tabs -->
+                        <div class="flex gap-4 mb-6 border-b border-gray-200">
+                            <button
+                                @click="activeTab = 'login'"
+                                :class="[
+                                    'pb-3 px-4 font-semibold transition-all',
+                                    activeTab === 'login' 
+                                        ? 'text-amber-700 border-b-2 border-amber-700' 
+                                        : 'text-gray-500 hover:text-gray-700'
+                                ]"
+                            >
+                                <i class="fas fa-sign-in-alt mr-2"></i>
+                                Login
+                            </button>
+                            <button
+                                @click="activeTab = 'register'"
+                                :class="[
+                                    'pb-3 px-4 font-semibold transition-all',
+                                    activeTab === 'register' 
+                                        ? 'text-amber-700 border-b-2 border-amber-700' 
+                                        : 'text-gray-500 hover:text-gray-700'
+                                ]"
+                            >
+                                <i class="fas fa-user-plus mr-2"></i>
+                                Register
+                            </button>
+                        </div>
+                        
+                        <!-- Login Form -->
+                        <form v-if="activeTab === 'login'" @submit.prevent="handleLogin" class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-user mr-2"></i>Username
+                                </label>
+                                <input
+                                    v-model="loginForm.username"
+                                    type="text"
+                                    required
+                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="Enter your username"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-lock mr-2"></i>Password
+                                </label>
+                                <input
+                                    v-model="loginForm.password"
+                                    type="password"
+                                    required
+                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="Enter your password"
+                                />
+                            </div>
+                            
+                            <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                {{ error }}
+                            </div>
+                            
+                            <button
+                                type="submit"
+                                :disabled="isLoading"
+                                class="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white py-3 rounded-lg font-semibold hover:from-amber-700 hover:to-amber-800 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            >
+                                <i v-if="isLoading" class="fas fa-spinner fa-spin mr-2"></i>
+                                <i v-else class="fas fa-sign-in-alt mr-2"></i>
+                                {{ isLoading ? 'Logging in...' : 'Login' }}
+                            </button>
+                        </form>
+                        
+                        <!-- Register Form -->
+                        <form v-if="activeTab === 'register'" @submit.prevent="handleRegister" class="space-y-4">
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        First Name
+                                    </label>
+                                    <input
+                                        v-model="registerForm.first_name"
+                                        type="text"
+                                        class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                        placeholder="John"
+                                    />
+                                </div>
+                                
+                                <div>
+                                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                                        Last Name
+                                    </label>
+                                    <input
+                                        v-model="registerForm.last_name"
+                                        type="text"
+                                        class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                        placeholder="Doe"
+                                    />
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-user mr-2"></i>Username
+                                </label>
+                                <input
+                                    v-model="registerForm.username"
+                                    type="text"
+                                    required
+                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="Choose a username"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-envelope mr-2"></i>Email
+                                </label>
+                                <input
+                                    v-model="registerForm.email"
+                                    type="email"
+                                    required
+                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="your@email.com"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-lock mr-2"></i>Password
+                                </label>
+                                <input
+                                    v-model="registerForm.password"
+                                    type="password"
+                                    required
+                                    minlength="8"
+                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="Min. 8 characters"
+                                />
+                            </div>
+                            
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-2">
+                                    <i class="fas fa-lock mr-2"></i>Confirm Password
+                                </label>
+                                <input
+                                    v-model="registerForm.password_confirm"
+                                    type="password"
+                                    required
+                                    class="input-field w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-500"
+                                    placeholder="Repeat your password"
+                                />
+                            </div>
+                            
+                            <div v-if="error" class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+                                <i class="fas fa-exclamation-circle mr-2"></i>
+                                {{ error }}
+                            </div>
+                            
+                            <div v-if="success" class="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-lg text-sm">
+                                <i class="fas fa-check-circle mr-2"></i>
+                                {{ success }}
+                            </div>
+                            
+                            <button
+                                type="submit"
+                                :disabled="isLoading"
+                                class="w-full bg-gradient-to-r from-amber-600 to-amber-700 text-white py-3 rounded-lg font-semibold hover:from-amber-700 hover:to-amber-800 transition-all transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed shadow-lg"
+                            >
+                                <i v-if="isLoading" class="fas fa-spinner fa-spin mr-2"></i>
+                                <i v-else class="fas fa-user-plus mr-2"></i>
+                                {{ isLoading ? 'Creating account...' : 'Create Account' }}
+                            </button>
+                        </form>
+                        
+                        <!-- Footer -->
+                        <div class="mt-6 text-center text-sm text-gray-600">
+                            <p>
+                                <i class="fas fa-graduation-cap mr-2"></i>
+                                NLP Capstone Project 2025
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const { createApp } = Vue;
+
+        createApp({
+            data() {
+                return {
+                    apiUrl: 'http://localhost:8000/api/v1',
+                    activeTab: 'login',
+                    isLoading: false,
+                    isTransitioning: false,
+                    error: '',
+                    success: '',
+                    
+                    loginForm: {
+                        username: '',
+                        password: ''
+                    },
+                    
+                    registerForm: {
+                        username: '',
+                        email: '',
+                        password: '',
+                        password_confirm: '',
+                        first_name: '',
+                        last_name: ''
+                    }
+                };
+            },
+            
+            watch: {
+                activeTab() {
+                    this.isTransitioning = true;
+                    this.error = '';
+                    this.success = '';
+                    setTimeout(() => {
+                        this.isTransitioning = false;
+                    }, 600);
+                }
+            },
+            
+            methods: {
+                async handleLogin() {
+                    this.error = '';
+                    this.isLoading = true;
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/auth/login/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.loginForm)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Store token and user data
+                            localStorage.setItem('authToken', data.token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            
+                            // Redirect to main app
+                            window.location.href = 'index.html';
+                        } else {
+                            this.error = data.error || 'Login failed';
+                        }
+                    } catch (error) {
+                        console.error('Login error:', error);
+                        this.error = 'Network error. Please check if the server is running.';
+                    } finally {
+                        this.isLoading = false;
+                    }
+                },
+                
+                async handleRegister() {
+                    this.error = '';
+                    this.success = '';
+                    
+                    // Validate passwords match
+                    if (this.registerForm.password !== this.registerForm.password_confirm) {
+                        this.error = "Passwords don't match";
+                        return;
+                    }
+                    
+                    this.isLoading = true;
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/auth/register/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify(this.registerForm)
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            this.success = 'Account created successfully! Redirecting...';
+                            
+                            // Store token and user data
+                            localStorage.setItem('authToken', data.token);
+                            localStorage.setItem('user', JSON.stringify(data.user));
+                            
+                            // Redirect after 2 seconds
+                            setTimeout(() => {
+                                window.location.href = 'index.html';
+                            }, 2000);
+                        } else {
+                            if (data.errors) {
+                                // Format Django validation errors
+                                this.error = Object.values(data.errors).flat().join(', ');
+                            } else {
+                                this.error = 'Registration failed';
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Register error:', error);
+                        this.error = 'Network error. Please check if the server is running.';
+                    } finally {
+                        this.isLoading = false;
+                    }
+                }
+            },
+            
+            mounted() {
+                // Check if user is already logged in
+                const token = localStorage.getItem('authToken');
+                if (token) {
+                    // Redirect to main app
+                    window.location.href = 'index.html';
+                }
+            }
+        }).mount('#app');
+    </script>
+</body>
+</html>

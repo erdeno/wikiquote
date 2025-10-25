@@ -19,11 +19,6 @@ class WhisperASR:
     def transcribe(self, audio_file_path: str, language: Optional[str] = None) -> dict:
         """
         Transcribe audio file to text
-        Args:
-            audio_file_path: Path to audio file
-            language: Optional language code (e.g., 'en', 'es')
-        Returns:
-            dict with 'text', 'language', 'segments'
         """
         options = {}
         if language:
@@ -41,7 +36,6 @@ class WhisperASR:
         """
         Transcribe audio from bytes
         """
-        # Write bytes to temporary file
         with tempfile.NamedTemporaryFile(delete=False, suffix='.wav') as tmp_file:
             tmp_file.write(audio_bytes)
             tmp_path = tmp_file.name

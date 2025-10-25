@@ -13,12 +13,57 @@
         <div class="min-h-screen bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
             <div class="container mx-auto px-4 py-8 max-w-6xl">
                 <!-- Header -->
-                <div class="text-center mb-12">
-                    <h1 class="text-5xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-3">
-                        <i class="fas fa-quote-left text-indigo-600"></i>
-                        Which Quote?
-                    </h1>
-                    <p class="text-gray-600 text-lg">Ask for wisdom using your voice or text</p>
+                <!-- Header with User Info -->
+                <div class="flex justify-between items-center mb-12">
+                    <div class="text-center flex-1">
+                        <h1 class="text-5xl font-bold text-gray-800 mb-4 flex items-center justify-center gap-3">
+                            <i class="fas fa-quote-left text-indigo-600"></i>
+                            Which Quote?
+                        </h1>
+                        <p class="text-gray-600 text-lg">Ask for wisdom using your voice or text</p>
+                    </div>
+                    
+                    <!-- User Menu -->
+                    <div class="relative">
+                        <button
+                            @click="showUserMenu = !showUserMenu"
+                            class="flex items-center gap-3 bg-white rounded-full px-4 py-2 shadow-lg hover:shadow-xl transition-all"
+                        >
+                            <div class="w-10 h-10 bg-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
+                                {{ userInitials }}
+                            </div>
+                            <div class="text-left hidden md:block">
+                                <p class="text-sm font-semibold text-gray-800">{{ userName }}</p>
+                                <p class="text-xs text-gray-500">{{ userQueries }} queries</p>
+                            </div>
+                            <i class="fas fa-chevron-down text-gray-400"></i>
+                        </button>
+                        
+                        <!-- Dropdown Menu -->
+                        <div
+                            v-if="showUserMenu"
+                            class="absolute right-0 mt-2 w-64 bg-white rounded-lg shadow-xl py-2 z-50"
+                        >
+                            <div class="px-4 py-3 border-b">
+                                <p class="text-sm font-semibold">{{ user.username }}</p>
+                                <p class="text-xs text-gray-500">{{ user.email }}</p>
+                            </div>
+                            <button
+                                @click="showProfileModal = true; showUserMenu = false"
+                                class="w-full text-left px-4 py-2 hover:bg-gray-100 flex items-center gap-3"
+                            >
+                                <i class="fas fa-user"></i>
+                                Profile Settings
+                            </button>
+                            <button
+                                @click="handleLogout"
+                                class="w-full text-left px-4 py-2 hover:bg-gray-100 text-red-600 flex items-center gap-3"
+                            >
+                                <i class="fas fa-sign-out-alt"></i>
+                                Logout
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Mode Toggle -->
@@ -137,20 +182,112 @@
                         <div class="bg-white rounded-2xl shadow-xl p-6">
                             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
                                 <i class="fas fa-user"></i>
-                                Speaker ID
+                                Voice Registration
                             </h3>
-                            <input
-                                v-model="speakerId"
-                                type="text"
-                                placeholder="Your name"
-                                class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-3 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                            />
+                            
+                            <div v-if="user?.profile?.voice_registered" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
+                                <span class="text-sm text-green-700">Voice already registered</span>
+                            </div>
+                            
+                            <div class="mb-4 space-y-2">
+                                <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
+                                    <i class="fas fa-user-circle"></i>
+                                    Choose Your Voice
+                                </label>
+                                
+                                <!-- Voice Selection Cards -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div
+                                        v-for="voice in ['male_1', 'male_2', 'male_3', 'female_1', 'female_2', 'female_3']"
+                                        :key="voice"
+                                        @click="ttsPreferences.voice_type = voice"
+                                        :class="[
+                                            'p-3 rounded-lg border-2 cursor-pointer transition-all',
+                                            ttsPreferences.voice_type === voice 
+                                                ? 'border-indigo-600 bg-indigo-50' 
+                                                : 'border-gray-200 hover:border-indigo-300'
+                                        ]"
+                                    >
+                                        <div class="flex items-center gap-2">
+                                            <i :class="[
+                                                'fas text-xl',
+                                                voice.startsWith('male') ? 'fa-mars text-blue-600' : 'fa-venus text-pink-600'
+                                            ]"></i>
+                                            <div class="flex-1">
+                                                <p class="text-sm font-semibold text-gray-800">
+                                                    {{ voice.startsWith('male') ? 'Male' : 'Female' }}
+                                                </p>
+                                                <p class="text-xs text-gray-500">
+                                                    Voice {{ voice.slice(-1) }}
+                                                </p>
+                                            </div>
+                                            <button
+                                                @click.stop="testSpecificVoice(voice)"
+                                                class="p-2 hover:bg-white rounded-full transition-colors"
+                                                title="Test this voice"
+                                            >
+                                                <i class="fas fa-play text-indigo-600 text-xs"></i>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3 space-y-2">
+                                <label class="text-sm text-gray-600 flex items-center gap-2">
+                                    <i class="fas fa-music"></i>
+                                    Voice Pitch
+                                </label>
+                                <input
+                                    v-model.number="ttsPreferences.pitch"
+                                    type="range"
+                                    min="0.5"
+                                    max="2.0"
+                                    step="0.1"
+                                    class="w-full"
+                                />
+                                <span class="text-xs text-gray-500">{{ ttsPreferences.pitch.toFixed(1) }}</span>
+                            </div>
+                            
+                            <div class="mb-3 space-y-2">
+                                <label class="text-sm text-gray-600 flex items-center gap-2">
+                                    <i class="fas fa-tachometer-alt"></i>
+                                    Voice Speed
+                                </label>
+                                <input
+                                    v-model.number="ttsPreferences.speed"
+                                    type="range"
+                                    min="0.5"
+                                    max="2.0"
+                                    step="0.1"
+                                    class="w-full"
+                                />
+                                <span class="text-xs text-gray-500">{{ ttsPreferences.speed.toFixed(1) }}</span>
+                            </div>
+                            
+                            <div class="mb-3 space-y-2">
+                                <label class="text-sm text-gray-600 flex items-center gap-2">
+                                    <i class="fas fa-bolt"></i>
+                                    Voice Energy
+                                </label>
+                                <input
+                                    v-model.number="ttsPreferences.energy"
+                                    type="range"
+                                    min="0.5"
+                                    max="2.0"
+                                    step="0.1"
+                                    class="w-full"
+                                />
+                                <span class="text-xs text-gray-500">{{ ttsPreferences.energy.toFixed(1) }}</span>
+                            </div>
+                            
                             <button
                                 @click="registerSpeaker"
                                 class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
                             >
-                                <i class="fas fa-user-plus mr-2"></i>
-                                Register Voice
+                                <i class="fas fa-microphone mr-2"></i>
+                                {{ user?.profile?.voice_registered ? 'Re-register Voice' : 'Register Voice' }}
                             </button>
                         </div>
 
@@ -190,6 +327,130 @@
                 </div>
             </div>
         </div>
+        
+        <!-- Settings Modal -->
+        <div
+            v-if="showProfileModal"
+            class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+            @click.self="showProfileModal = false"
+        >
+            <div class="bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+                <div class="p-6 border-b sticky top-0 bg-white">
+                    <div class="flex justify-between items-center">
+                        <h2 class="text-2xl font-bold text-gray-800">
+                            <i class="fas fa-cog mr-2 text-indigo-600"></i>
+                            Profile Settings
+                        </h2>
+                        <button
+                            @click="showProfileModal = false"
+                            class="text-gray-500 hover:text-gray-700"
+                        >
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="p-6 space-y-6">
+                    <!-- User Info -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Account Information</h3>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="text-sm text-gray-600">Username</label>
+                                <p class="font-semibold">{{ user?.username }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Email</label>
+                                <p class="font-semibold">{{ user?.email }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Total Queries</label>
+                                <p class="font-semibold">{{ user?.profile?.queries_count || 0 }}</p>
+                            </div>
+                            <div>
+                                <label class="text-sm text-gray-600">Voice Status</label>
+                                <p :class="[
+                                    'font-semibold',
+                                    user?.profile?.voice_registered ? 'text-green-600' : 'text-gray-500'
+                                ]">
+                                    <i :class="[
+                                        'fas mr-1',
+                                        user?.profile?.voice_registered ? 'fa-check-circle' : 'fa-times-circle'
+                                    ]"></i>
+                                    {{ user?.profile?.voice_registered ? 'Registered' : 'Not Registered' }}
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Voice Preferences -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Voice Preferences</h3>
+                        
+                        <!-- Current Voice Display -->
+                        <div v-if="user?.profile?.voice_registered" class="mb-4 p-4 bg-indigo-50 rounded-lg">
+                            <p class="text-sm text-gray-600 mb-2">Current Voice Settings</p>
+                            <div class="flex items-center gap-3">
+                                <i :class="[
+                                    'fas text-2xl',
+                                    user?.profile?.tts_voice_type?.startsWith('male') ? 'fa-mars text-blue-600' : 'fa-venus text-pink-600'
+                                ]"></i>
+                                <div class="flex-1">
+                                    <p class="font-semibold text-gray-800">
+                                        {{ user?.profile?.tts_voice_type?.replace('_', ' ').toUpperCase() }}
+                                    </p>
+                                    <p class="text-xs text-gray-500">
+                                        Pitch: {{ user?.profile?.tts_pitch }} | 
+                                        Speed: {{ user?.profile?.tts_speed }} | 
+                                        Energy: {{ user?.profile?.tts_energy }}
+                                    </p>
+                                </div>
+                                <button
+                                    @click="testCurrentVoice"
+                                    class="px-3 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors text-sm"
+                                >
+                                    <i class="fas fa-play mr-1"></i>
+                                    Test
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- Update Preferences -->
+                        <button
+                            @click="loadCurrentPreferences"
+                            class="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                        >
+                            <i class="fas fa-edit mr-2"></i>
+                            Update Voice Preferences
+                        </button>
+                    </div>
+                    
+                    <!-- Statistics -->
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-800 mb-3">Statistics</h3>
+                        <div class="grid grid-cols-3 gap-4">
+                            <div class="text-center p-4 bg-blue-50 rounded-lg">
+                                <i class="fas fa-microphone text-2xl text-blue-600 mb-2"></i>
+                                <p class="text-2xl font-bold text-blue-600">{{ history.length }}</p>
+                                <p class="text-xs text-gray-600">This Session</p>
+                            </div>
+                            <div class="text-center p-4 bg-green-50 rounded-lg">
+                                <i class="fas fa-quote-right text-2xl text-green-600 mb-2"></i>
+                                <p class="text-2xl font-bold text-green-600">{{ user?.profile?.queries_count || 0 }}</p>
+                                <p class="text-xs text-gray-600">Total Queries</p>
+                            </div>
+                            <div class="text-center p-4 bg-purple-50 rounded-lg">
+                                <i class="fas fa-clock text-2xl text-purple-600 mb-2"></i>
+                                <p class="text-sm font-bold text-purple-600">
+                                    {{ formatDate(user?.profile?.last_query) }}
+                                </p>
+                                <p class="text-xs text-gray-600">Last Query</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <!-- Hidden audio element -->
         <audio ref="audioPlayer"></audio>
@@ -214,14 +475,101 @@
                     apiStatus: false,
                     mediaRecorder: null,
                     audioChunks: [],
-                    responseAudioUrl: null
+                    responseAudioUrl: null,
+                    
+                    // User data
+                    user: null,
+                    authToken: null,
+                    showUserMenu: false,
+                    showProfileModal: false,
+                    
+                    // TTS Preferences
+                    ttsPreferences: {
+                        voice_type: 'female_1',
+                        pitch: 1.0,
+                        speed: 1.0,
+                        energy: 1.0
+                    },
+                    availableVoices: []
                 };
             },
+            
+            computed: {
+                userName() {
+                    if (!this.user) return 'Guest';
+                    return this.user.first_name || this.user.username;
+                },
+                userInitials() {
+                    if (!this.user) return 'G';
+                    const first = this.user.first_name?.[0] || this.user.username[0];
+                    const last = this.user.last_name?.[0] || '';
+                    return (first + last).toUpperCase();
+                },
+                userQueries() {
+                    return this.user?.profile?.queries_count || 0;
+                }
+            },
+            
             mounted() {
+                this.checkAuthentication();
                 this.requestMicrophonePermission();
                 this.checkApiStatus();
+                this.loadAvailableVoices();
+                
+                // Close menus when clicking outside
+                document.addEventListener('click', (e) => {
+                    if (!e.target.closest('.relative')) {
+                        this.showUserMenu = false;
+                    }
+                });
             },
             methods: {
+                checkAuthentication() {
+                    this.authToken = localStorage.getItem('authToken');
+                    const userStr = localStorage.getItem('user');
+                    
+                    if (!this.authToken || !userStr) {
+                        // Redirect to login
+                        window.location.href = 'login.html';
+                        return;
+                    }
+                    
+                    this.user = JSON.parse(userStr);
+                },
+                
+                async handleLogout() {
+                    try {
+                        await fetch(`${this.apiUrl}/auth/logout/`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Token ${this.authToken}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+                    } catch (error) {
+                        console.error('Logout error:', error);
+                    }
+                    
+                    // Clear local storage
+                    localStorage.removeItem('authToken');
+                    localStorage.removeItem('user');
+                    
+                    // Redirect to login
+                    window.location.href = 'login.html';
+                },
+                
+                async loadAvailableVoices() {
+                    try {
+                        const response = await fetch(`${this.apiUrl}/voice/voices/`);
+                        const data = await response.json();
+                        if (data.success) {
+                            this.availableVoices = data.voices;
+                        }
+                    } catch (error) {
+                        console.error('Error loading voices:', error);
+                    }
+                },
+                
                 async requestMicrophonePermission() {
                     try {
                         await navigator.mediaDevices.getUserMedia({ audio: true });
@@ -412,8 +760,8 @@
                 },
 
                 async registerSpeaker() {
-                    if (!this.speakerId.trim()) {
-                        alert('Please enter a speaker ID');
+                    if (!this.user) {
+                        alert('Please login first');
                         return;
                     }
 
@@ -428,17 +776,27 @@
                             const audioBlob = new Blob(chunks, { type: 'audio/wav' });
                             const formData = new FormData();
                             formData.append('audio', audioBlob, 'speaker.wav');
-                            formData.append('speaker_id', this.speakerId);
+                            formData.append('speaker_id', this.user.username);
+                            formData.append('voice_type', this.ttsPreferences.voice_type);
+                            formData.append('pitch', this.ttsPreferences.pitch);
+                            formData.append('speed', this.ttsPreferences.speed);
+                            formData.append('energy', this.ttsPreferences.energy);
 
                             const response = await fetch(`${this.apiUrl}/voice/speaker/register/`, {
                                 method: 'POST',
+                                headers: {
+                                    'Authorization': `Token ${this.authToken}`
+                                },
                                 body: formData,
                             });
 
                             const data = await response.json();
                             if (data.success) {
-                                alert(`Speaker "${this.speakerId}" registered successfully!`);
-                                this.speakerId = '';
+                                alert(`Voice registered successfully for ${this.user.username} with ${this.ttsPreferences.voice_type}!`);
+                                // Update user profile
+                                this.user.profile.voice_registered = true;
+                                this.user.profile.tts_voice_type = this.ttsPreferences.voice_type;
+                                localStorage.setItem('user', JSON.stringify(this.user));
                             } else {
                                 alert('Registration failed: ' + data.error);
                             }
@@ -453,6 +811,136 @@
                         console.error('Error registering speaker:', error);
                         alert('Failed to register speaker');
                     }
+                },
+                
+                async testVoice() {
+                    const testText = "Hello! This is how my voice will sound.";
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                text: testText,
+                                voice_type: this.ttsPreferences.voice_type
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            if (this.$refs.audioPlayer) {
+                                this.$refs.audioPlayer.src = audioUrl;
+                                this.$refs.audioPlayer.play();
+                            }
+                        } else {
+                            alert('Failed to generate test voice');
+                        }
+                    } catch (error) {
+                        console.error('Error testing voice:', error);
+                        alert('Failed to test voice');
+                    }
+                },
+                
+                async testSpecificVoice(voiceType) {
+                    const testText = "Hello! This is how I will sound when responding to your queries.";
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                text: testText,
+                                voice_type: voiceType
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            if (this.$refs.audioPlayer) {
+                                this.$refs.audioPlayer.src = audioUrl;
+                                this.$refs.audioPlayer.play();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error testing voice:', error);
+                    }
+                },
+                
+                async testCurrentVoice() {
+                    if (!this.user?.profile?.tts_voice_type) return;
+                    
+                    const testText = "This is your current personalized voice speaking.";
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                text: testText,
+                                speaker_id: this.user.username
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            if (this.$refs.audioPlayer) {
+                                this.$refs.audioPlayer.src = audioUrl;
+                                this.$refs.audioPlayer.play();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error testing current voice:', error);
+                    }
+                },
+                
+                loadCurrentPreferences() {
+                    if (this.user?.profile) {
+                        this.ttsPreferences.voice_type = this.user.profile.tts_voice_type || 'female_1';
+                        this.ttsPreferences.pitch = this.user.profile.tts_pitch || 1.0;
+                        this.ttsPreferences.speed = this.user.profile.tts_speed || 1.0;
+                        this.ttsPreferences.energy = this.user.profile.tts_energy || 1.0;
+                    }
+                    this.showProfileModal = false;
+                },
+                
+                formatDate(dateStr) {
+                    if (!dateStr) return 'Never';
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const diff = now - date;
+                    
+                    // Less than 1 minute
+                    if (diff < 60000) return 'Just now';
+                    
+                    // Less than 1 hour
+                    if (diff < 3600000) {
+                        const mins = Math.floor(diff / 60000);
+                        return `${mins} min ago`;
+                    }
+                    
+                    // Less than 24 hours
+                    if (diff < 86400000) {
+                        const hours = Math.floor(diff / 3600000);
+                        return `${hours}h ago`;
+                    }
+                    
+                    // Less than 7 days
+                    if (diff < 604800000) {
+                        const days = Math.floor(diff / 86400000);
+                        return `${days}d ago`;
+                    }
+                    
+                    // Format as date
+                    return date.toLocaleDateString();
                 }
             }
         }).mount('#app');
