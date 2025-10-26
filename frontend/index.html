@@ -192,42 +192,31 @@
                             
                             <div class="mb-4 space-y-2">
                                 <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
-                                    <i class="fas fa-user-circle"></i>
-                                    Choose Your Voice
+                                    <i class="fas fa-globe"></i>
+                                    Choose Your Accent
                                 </label>
                                 
-                                <!-- Voice Selection Cards -->
-                                <div class="grid grid-cols-2 gap-3">
+                                <!-- Accent Selection Grid -->
+                                <div class="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
                                     <div
-                                        v-for="voice in ['male_1', 'male_2', 'male_3', 'female_1', 'female_2', 'female_3']"
-                                        :key="voice"
-                                        @click="ttsPreferences.voice_type = voice"
+                                        v-for="accent in availableAccents"
+                                        :key="accent.id"
+                                        @click="ttsPreferences.accent = accent.id"
                                         :class="[
-                                            'p-3 rounded-lg border-2 cursor-pointer transition-all',
-                                            ttsPreferences.voice_type === voice 
+                                            'p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md',
+                                            ttsPreferences.accent === accent.id 
                                                 ? 'border-indigo-600 bg-indigo-50' 
                                                 : 'border-gray-200 hover:border-indigo-300'
-                                        ]"
-                                    >
-                                        <div class="flex items-center gap-2">
-                                            <i :class="[
-                                                'fas text-xl',
-                                                voice.startsWith('male') ? 'fa-mars text-blue-600' : 'fa-venus text-pink-600'
-                                            ]"></i>
-                                            <div class="flex-1">
-                                                <p class="text-sm font-semibold text-gray-800">
-                                                    {{ voice.startsWith('male') ? 'Male' : 'Female' }}
-                                                </p>
-                                                <p class="text-xs text-gray-500">
-                                                    Voice {{ voice.slice(-1) }}
-                                                </p>
-                                            </div>
+                                        ]">
+                                        <div class="text-center">
+                                            <div class="text-3xl mb-1">{{ accent.flag }}</div>
+                                            <p class="text-xs font-semibold text-gray-800">{{ accent.name }}</p>
+                                            <p class="text-xs text-gray-500">{{ accent.lang }}</p>
                                             <button
-                                                @click.stop="testSpecificVoice(voice)"
-                                                class="p-2 hover:bg-white rounded-full transition-colors"
-                                                title="Test this voice"
+                                                @click.stop="testSpecificAccent(accent.id)"
+                                                class="mt-2 w-full py-1 px-2 bg-indigo-100 hover:bg-indigo-200 rounded text-xs transition-colors"
                                             >
-                                                <i class="fas fa-play text-indigo-600 text-xs"></i>
+                                                <i class="fas fa-play text-indigo-600"></i>
                                             </button>
                                         </div>
                                     </div>
@@ -485,12 +474,22 @@
                     
                     // TTS Preferences
                     ttsPreferences: {
-                        voice_type: 'female_1',
+                        accent: 'american',
                         pitch: 1.0,
                         speed: 1.0,
                         energy: 1.0
                     },
-                    availableVoices: []
+                    availableAccents: [
+                        { id: 'american', name: 'American English', flag: '🇺🇸', lang: 'English' },
+                        { id: 'uk', name: 'British English', flag: '🇬🇧', lang: 'English' },
+                        { id: 'irish', name: 'Irish English', flag: '🇮🇪', lang: 'English' },
+                        { id: 'indian', name: 'Indian English', flag: '🇮🇳', lang: 'English' },
+                        { id: 'african', name: 'Nigerian English', flag: '🇳🇬', lang: 'English' },
+                        { id: 'mexican', name: 'Mexican Spanish', flag: '🇲🇽', lang: 'Español' },
+                        { id: 'french', name: 'French', flag: '🇫🇷', lang: 'Français' },
+                        { id: 'italian', name: 'Italian', flag: '🇮🇹', lang: 'Italiano' },
+                        { id: 'german', name: 'German', flag: '🇩🇪', lang: 'Deutsch' }
+                    ]
                 };
             },
             
@@ -515,6 +514,8 @@
                 this.requestMicrophonePermission();
                 this.checkApiStatus();
                 this.loadAvailableVoices();
+
+                setTimeout(() => this.playWelcomeMessage(), 1000);
                 
                 // Close menus when clicking outside
                 document.addEventListener('click', (e) => {
@@ -784,7 +785,7 @@
                             const formData = new FormData();
                             formData.append('audio', audioBlob, 'speaker.wav');
                             formData.append('speaker_id', this.user.username);
-                            formData.append('voice_type', this.ttsPreferences.voice_type);
+                            formData.append('voice_type', this.ttsPreferences.accent);
                             formData.append('pitch', this.ttsPreferences.pitch);
                             formData.append('speed', this.ttsPreferences.speed);
                             formData.append('energy', this.ttsPreferences.energy);
@@ -851,8 +852,20 @@
                     }
                 },
                 
-                async testSpecificVoice(voiceType) {
-                    const testText = "Hello! This is how I will sound when responding to your queries.";
+                async testSpecificAccent(accentId) {
+                    const greetings = {
+                        'american': 'Howdy! This is American English.',
+                        'uk': 'Hello there! This is British English.',
+                        'irish': 'Top of the morning! This is Irish English.',
+                        'indian': 'Namaste! This is Indian English.',
+                        'african': 'Hello! This is Nigerian English.',
+                        'mexican': '¡Hola! Este es español mexicano.',
+                        'french': 'Bonjour! Ceci est le français.',
+                        'italian': 'Ciao! Questo è italiano.',
+                        'german': 'Guten Tag! Das ist Deutsch.'
+                    };
+                    
+                    const testText = greetings[accentId] || 'Hello! This is a test.';
                     
                     try {
                         const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
@@ -862,7 +875,7 @@
                             },
                             body: JSON.stringify({
                                 text: testText,
-                                voice_type: voiceType
+                                voice_type: accentId
                             })
                         });
                         
@@ -875,7 +888,7 @@
                             }
                         }
                     } catch (error) {
-                        console.error('Error testing voice:', error);
+                        console.error('Error testing accent:', error);
                     }
                 },
                 
@@ -906,6 +919,44 @@
                         }
                     } catch (error) {
                         console.error('Error testing current voice:', error);
+                    }
+                },
+
+                async playWelcomeMessage() {
+                    if (!this.user) return;
+                    
+                    const accent = this.user.profile?.tts_voice_type || 'american';
+                    const name = this.user.first_name || this.user.username;
+                    
+                    const welcomeMessages = {
+                        'american': `Welcome back, ${name}! Ready to explore some quotes?`,
+                        'uk': `Welcome back, ${name}! Shall we discover some wisdom?`,
+                        'irish': `Welcome back, ${name}! Ready for some grand quotes?`,
+                        'mexican': `¡Bienvenido de nuevo, ${name}! ¿Listo para explorar citas?`,
+                        'french': `Bon retour, ${name}! Prêt à explorer des citations?`,
+                        'italian': `Bentornato, ${name}! Pronto per esplorare citazioni?`,
+                        'german': `Willkommen zurück, ${name}! Bereit für Zitate?`
+                    };
+                    
+                    const message = welcomeMessages[accent] || welcomeMessages['american'];
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: message, voice_type: accent })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            if (this.$refs.audioPlayer) {
+                                this.$refs.audioPlayer.src = audioUrl;
+                                this.$refs.audioPlayer.play();
+                            }
+                        }
+                    } catch (error) {
+                        console.error('Error playing welcome:', error);
                     }
                 },
                 

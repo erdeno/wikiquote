@@ -224,15 +224,9 @@ def list_speakers(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def voice_query(request):
-    """
-    Complete voice pipeline:
-    ASR → Speaker ID → Quote Search → Chatbot → Personalized TTS
-    """
+    """Complete voice pipeline with personalization"""
     if 'audio' not in request.FILES:
-        return Response(
-            {'error': 'No audio file provided'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({'error': 'No audio file provided'}, status=status.HTTP_400_BAD_REQUEST)
     
     audio_file = request.FILES['audio']
     user = request.user
@@ -240,7 +234,11 @@ def voice_query(request):
     try:
         audio_bytes = audio_file.read()
         
-        # Step 1: Transcribe (ASR)
+        # Get user's accent preference
+        user_accent = user.profile.tts_voice_type  # This will be the accent now
+        username = user.first_name or user.username
+        
+        # Step 1: Transcribe
         asr = get_asr_service()
         transcription_result = asr.transcribe_bytes(audio_bytes)
         user_query = transcription_result['text']
@@ -249,16 +247,16 @@ def voice_query(request):
         speaker_svc = get_speaker_service()
         speaker_id = speaker_svc.identify_speaker(audio_bytes, threshold=0.25)
         
-        # Step 3: Process query with chatbot
+        # Step 3: Process with personalized chatbot
         chatbot = QuoteChatbot()
-        chat_result = chatbot.process_query(user_query)
+        chat_result = chatbot.process_query(user_query, username=username, accent=user_accent)
         response_text = chat_result['response']
         
-        # Step 4: Synthesize with personalized TTS
+        # Step 4: Synthesize with user's accent
         tts = get_tts_service()
         response_audio = tts.synthesize_to_bytes(response_text, speaker_id=user.username)
         
-        # Update user statistics
+        # Update statistics
         profile = user.profile
         profile.queries_count += 1
         profile.last_query = timezone.now()
@@ -275,17 +273,14 @@ def voice_query(request):
             'identified_speaker': speaker_id,
             'matches_user': speaker_id == user.username if speaker_id else False,
             'quote_found': chat_result['quote_found'],
-            'quote_data': chat_result['quote_data']
+            'quote_data': chat_result['quote_data'],
+            'accent_used': user_accent
         })
     
     except Exception as e:
         import traceback
         traceback.print_exc()
-        return Response(
-            {'error': str(e)},
-            status=status.HTTP_500_INTERNAL_SERVER_ERROR
-        )
-
+        return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 # Add this new endpoint
 @api_view(['GET'])

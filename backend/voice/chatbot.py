@@ -3,72 +3,158 @@ from typing import Optional, Dict
 import random
 
 class QuoteChatbot:
-    """
-    Chatbot that finds relevant quotes and crafts conversational responses
-    """
-    
     def __init__(self, quotes_api_url: str = "http://localhost:8000/api/v1/quotes/search/"):
         self.quotes_api_url = quotes_api_url
-        
-    def search_quote(self, query: str) -> Optional[Dict]:
-        """
-        Search for a quote using the Django quotes API
-        """
-        try:
-            response = requests.get(self.quotes_api_url, params={'q': query})
-            if response.status_code == 200:
-                data = response.json()
-                if data.get('results') and len(data['results']) > 0:
-                    return data['results'][0]  # Return best match
-            return None
-        except Exception as e:
-            print(f"Error searching quotes: {e}")
-            return None
     
-    def craft_response(self, user_query: str, quote_data: Optional[Dict] = None) -> str:
-        """
-        Craft a natural conversational response
-        """
+    def get_personalized_greeting(self, username: str, accent: str = 'american') -> str:
+        """Generate personalized greeting based on accent"""
+        greetings = {
+            'american': [
+                f"Hey {username}! How can I help you today?",
+                f"Hi {username}! What quote are you looking for?",
+                f"Hello {username}! Ready to discover some wisdom?"
+            ],
+            'uk': [
+                f"Good day, {username}! How may I assist you?",
+                f"Hello {username}! What wisdom shall we seek today?",
+                f"Greetings {username}! Ready for some brilliant quotes?"
+            ],
+            'irish': [
+                f"Top of the morning, {username}! What can I do for you?",
+                f"Hello there, {username}! Looking for some wise words?",
+                f"Good day to you, {username}! What quote shall we find?"
+            ],
+            'indian': [
+                f"Namaste {username}! How can I help you today?",
+                f"Hello {username}! What wisdom are you seeking?",
+                f"Greetings {username}! Ready to explore quotes?"
+            ],
+            'african': [
+                f"Hello {username}! What can I do for you today?",
+                f"Greetings {username}! Looking for some wisdom?",
+                f"Welcome {username}! What quote interests you?"
+            ],
+            'mexican': [
+                f"¡Hola {username}! ¿Cómo puedo ayudarte?",
+                f"¡Buenos días {username}! ¿Qué cita buscas?",
+                f"¡Saludos {username}! ¿Listo para descubrir sabiduría?"
+            ],
+            'french': [
+                f"Bonjour {username}! Comment puis-je vous aider?",
+                f"Salut {username}! Quelle citation cherchez-vous?",
+                f"Bienvenue {username}! Prêt pour des citations?"
+            ],
+            'italian': [
+                f"Ciao {username}! Come posso aiutarti?",
+                f"Salve {username}! Quale citazione cerchi?",
+                f"Benvenuto {username}! Pronto per le citazioni?"
+            ],
+            'german': [
+                f"Guten Tag {username}! Wie kann ich helfen?",
+                f"Hallo {username}! Welches Zitat suchen Sie?",
+                f"Willkommen {username}! Bereit für Zitate?"
+            ]
+        }
+        
+        accent_greetings = greetings.get(accent, greetings['american'])
+        return random.choice(accent_greetings)
+    
+    def craft_response(self, user_query: str, quote_data: Optional[Dict] = None, 
+                      username: str = None, accent: str = 'american') -> str:
+        """Craft response with personalization"""
+        
         if not quote_data:
-            return self._no_quote_response(user_query)
+            return self._no_quote_response(user_query, username, accent)
         
         quote_text = quote_data.get('text', '')
         author = quote_data.get('author', 'Unknown')
         work = quote_data.get('work', '')
         
-        # Choose a response template
-        templates = [
-            f"{author} once said: {quote_text}",
-            f"Here's a quote from {author}: {quote_text}",
-            f"I found this from {author}: {quote_text}",
-            f"{author} had something relevant: {quote_text}",
-        ]
+        # Personalized intros based on accent
+        intros = {
+            'american': [
+                f"Great question{', ' + username if username else ''}!",
+                f"I found something perfect{' for you, ' + username if username else ''}!",
+                f"Check this out{', ' + username if username else ''}!"
+            ],
+            'uk': [
+                f"Splendid question{', ' + username if username else ''}!",
+                f"I've found something rather fitting{' for you, ' + username if username else ''}!",
+                f"Do have a look at this{', ' + username if username else ''}!"
+            ],
+            'irish': [
+                f"Grand question{', ' + username if username else ''}!",
+                f"I've got just the thing{' for you, ' + username if username else ''}!",
+                f"Take a gander at this{', ' + username if username else ''}!"
+            ],
+            'mexican': [
+                f"¡Excelente pregunta{', ' + username if username else ''}!",
+                f"¡Encontré algo perfecto{' para ti, ' + username if username else ''}!",
+                f"¡Mira esto{', ' + username if username else ''}!"
+            ],
+            'french': [
+                f"Excellente question{', ' + username if username else ''}!",
+                f"J'ai trouvé quelque chose de parfait{' pour vous, ' + username if username else ''}!",
+                f"Regardez ceci{', ' + username if username else ''}!"
+            ],
+            'italian': [
+                f"Ottima domanda{', ' + username if username else ''}!",
+                f"Ho trovato qualcosa di perfetto{' per te, ' + username if username else ''}!",
+                f"Guarda questo{', ' + username if username else ''}!"
+            ],
+            'german': [
+                f"Gute Frage{', ' + username if username else ''}!",
+                f"Ich habe etwas Perfektes gefunden{' für Sie, ' + username if username else ''}!",
+                f"Sehen Sie sich das an{', ' + username if username else ''}!"
+            ]
+        }
         
+        intro = random.choice(intros.get(accent, intros['american']))
+        
+        # Build response
         if work:
-            templates.extend([
-                f"From {author}'s {work}: {quote_text}",
-                f"In {work}, {author} wrote: {quote_text}",
-            ])
+            response = f"{intro} {author} said in {work}: {quote_text}"
+        else:
+            response = f"{intro} {author} once said: {quote_text}"
         
-        return random.choice(templates)
+        return response
     
-    def _no_quote_response(self, query: str) -> str:
-        """
-        Response when no quote is found
-        """
-        responses = [
-            "I couldn't find a relevant quote for that. Could you try rephrasing?",
-            "Hmm, I don't have a quote that matches. Try asking differently.",
-            "No matching quote found. What else can I help you with?",
-        ]
-        return random.choice(responses)
+    def _no_quote_response(self, query: str, username: str = None, accent: str = 'american') -> str:
+        """Response when no quote found"""
+        responses = {
+            'american': [
+                f"Sorry{', ' + username if username else ''}, I couldn't find a quote for that. Try rephrasing?",
+                f"Hmm{', ' + username if username else ''}, no matches. Want to try different keywords?",
+            ],
+            'uk': [
+                f"Apologies{', ' + username if username else ''}, I couldn't locate a suitable quote. Perhaps rephrase?",
+                f"I'm afraid{', ' + username if username else ''} I found nothing. Try different terms?",
+            ],
+            'mexican': [
+                f"Lo siento{', ' + username if username else ''}, no encontré una cita. ¿Intentar de nuevo?",
+                f"Disculpa{', ' + username if username else ''}, sin resultados. ¿Otra búsqueda?",
+            ],
+            'french': [
+                f"Désolé{', ' + username if username else ''}, aucune citation trouvée. Reformuler?",
+                f"Pardon{', ' + username if username else ''}, pas de résultats. Essayer autrement?",
+            ],
+            'italian': [
+                f"Scusa{', ' + username if username else ''}, nessuna citazione trovata. Riformulare?",
+                f"Mi dispiace{', ' + username if username else ''}, nessun risultato. Provare diversamente?",
+            ],
+            'german': [
+                f"Entschuldigung{', ' + username if username else ''}, kein Zitat gefunden. Umformulieren?",
+                f"Tut mir leid{', ' + username if username else ''}, keine Ergebnisse. Anders versuchen?",
+            ]
+        }
+        
+        accent_responses = responses.get(accent, responses['american'])
+        return random.choice(accent_responses)
     
-    def process_query(self, user_query: str) -> Dict:
-        """
-        Full pipeline: search + craft response
-        """
+    def process_query(self, user_query: str, username: str = None, accent: str = 'american') -> Dict:
+        """Full pipeline with personalization"""
         quote_data = self.search_quote(user_query)
-        response_text = self.craft_response(user_query, quote_data)
+        response_text = self.craft_response(user_query, quote_data, username, accent)
         
         return {
             'query': user_query,
