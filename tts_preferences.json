@@ -1,0 +1,20 @@
+{
+  "journeyuser": {
+    "voice_type": "male_1",
+    "pitch": 1.2,
+    "speed": 0.9,
+    "energy": 1.1
+  },
+  "testuser": {
+    "voice_type": "male_1",
+    "pitch": 1.0,
+    "speed": 1.0,
+    "energy": 1.0
+  },
+  "test_user": {
+    "voice_type": "male_1",
+    "pitch": 1.2,
+    "speed": 0.9,
+    "energy": 1.1
+  }
+}
