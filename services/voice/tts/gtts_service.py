@@ -69,14 +69,22 @@ class GTTSService:
         self._save_preferences()
     
     def synthesize_to_file(self, text: str, output_path: str, 
-                          speaker_id: Optional[str] = None,
-                          voice_type: Optional[str] = None) -> bool:
+                      speaker_id: Optional[str] = None,
+                      voice_type: Optional[str] = None,
+                      pitch: float = None,
+                      speed: float = None,
+                      energy: float = None) -> bool:
         try:
+            # Get user preferences
             prefs = self.user_preferences.get(speaker_id, {})
             selected_voice = voice_type or prefs.get('voice_type', 'american')
             config = self.voice_configs.get(selected_voice, self.voice_configs['american'])
             
-            print(f"🎤 gTTS synthesis: {selected_voice} (pitch={config['pitch']}, speed={config['speed']})")
+            # ✅ Use parameters if provided, otherwise fall back to config
+            final_pitch = pitch if pitch is not None else config['pitch']
+            final_speed = speed if speed is not None else config['speed']
+            
+            print(f"🎤 gTTS synthesis: {selected_voice} (pitch={final_pitch}, speed={final_speed})")
             
             # Generate with gTTS
             tts = gTTS(text=text, lang=config['lang'], tld=config['tld'], slow=False)
@@ -92,12 +100,12 @@ class GTTSService:
                 tts.save(tmp_mp3)
             
             try:
-                # Apply pitch and speed with ffmpeg
-                pitch_cents = config['pitch'] * 100  # Convert semitones to cents
+                # ✅ Apply pitch and speed from parameters
+                pitch_cents = final_pitch * 100  # Convert semitones to cents
                 
                 cmd = [
                     'ffmpeg', '-i', tmp_mp3,
-                    '-af', f'asetrate=44100*2^({pitch_cents}/1200),atempo={config["speed"]},aresample=44100',
+                    '-af', f'asetrate=44100*2^({pitch_cents}/1200),atempo={final_speed},aresample=44100',
                     '-y', output_path
                 ]
                 
@@ -119,6 +127,7 @@ class GTTSService:
             import traceback
             traceback.print_exc()
             return False
+
     
     def synthesize_to_bytes(self, text: str, speaker_id: Optional[str] = None,
                            voice_type: Optional[str] = None) -> Optional[bytes]:

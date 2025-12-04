@@ -1012,7 +1012,7 @@
             data() {
                 return {
                     apiUrl: 'http://localhost:8000/api/v1',
-                    mode: 'voice',
+                    mode: 'text',
                     isRecording: false,
                     isProcessing: false,
                     transcription: '',
@@ -1029,7 +1029,7 @@
                     // Chatbot data
                     showChatbot: true,
                     chatOpen: false,
-                    chatMode: 'text', // 'text' or 'voice'
+                    chatMode: 'text',
                     chatInput: '',
                     chatMessages: [
                         {
@@ -1303,19 +1303,7 @@
                             timestamp: new Date().toLocaleTimeString()
                         });
 
-                        // Synthesize speech
-                        const ttsResponse = await fetch(`${this.apiUrl}/voice/synthesize/`, {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
-                            body: JSON.stringify({ text: responseText })
-                        });
-
-                        if (ttsResponse.ok) {
-                            const audioBlob = await ttsResponse.blob();
-                            this.responseAudioUrl = URL.createObjectURL(audioBlob);
-                            this.$refs.audioPlayer.src = this.responseAudioUrl;
-                            this.$refs.audioPlayer.play();
-                        }
+                        await this.synthesizeWithAccent(responseText);
 
                         this.textQuery = '';
                     } catch (error) {
@@ -1422,7 +1410,40 @@
                     
                     await this.testSpecificAccent(this.user.profile.tts_voice_type);
                 },
-                
+                async synthesizeWithAccent(text) {
+                    try {
+                        // Use the selected accent from ttsPreferences
+                        const voiceType = this.ttsPreferences.accent || 'american';
+                        
+                        const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
+                            method: 'POST',
+                            headers: { 
+                                'Content-Type': 'application/json',
+                                'Authorization': `Token ${this.authToken}`
+                            },
+                            body: JSON.stringify({ 
+                                text: text,
+                                voice_type: voiceType,  // ✅ Use selected accent
+                                pitch: this.ttsPreferences.pitch,
+                                speed: this.ttsPreferences.speed,
+                                energy: this.ttsPreferences.energy
+                            })
+                        });
+                        
+                        if (response.ok) {
+                            const audioBlob = await response.blob();
+                            const audioUrl = URL.createObjectURL(audioBlob);
+                            if (this.$refs.audioPlayer) {
+                                this.$refs.audioPlayer.src = audioUrl;
+                                this.$refs.audioPlayer.play();
+                            }
+                        } else {
+                            console.error('Failed to synthesize speech');
+                        }
+                    } catch (error) {
+                        console.error('Error synthesizing speech:', error);
+                    }
+                },
                 async testVoice() {
                     const testText = "Hello! This is how my voice will sound.";
                     

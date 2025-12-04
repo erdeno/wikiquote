@@ -165,8 +165,11 @@ def synthesize_speech(request):
     """TTS endpoint: convert text to speech"""
     text = request.data.get('text')
     speaker_id = request.data.get('speaker_id')
-    voice_type = request.data.get('voice_type')  # NEW
-    
+    voice_type = request.data.get('voice_type')
+    pitch = request.data.get('pitch', 1.0)
+    speed = request.data.get('speed', 1.0)
+    energy = request.data.get('energy', 1.0)
+
     if not text:
         return Response(
             {'error': 'No text provided'},
@@ -178,7 +181,10 @@ def synthesize_speech(request):
         audio_bytes = tts.synthesize_to_bytes(
             text, 
             speaker_id=speaker_id,
-            voice_type=voice_type  # NEW
+            voice_type=voice_type,
+            pitch=pitch,  
+            speed=speed,  
+            energy=energy 
         )
         
         if audio_bytes:
@@ -198,7 +204,6 @@ def synthesize_speech(request):
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
