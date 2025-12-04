@@ -7,11 +7,7 @@ urlpatterns = [
     # ASR endpoint
     path('transcribe/', views.transcribe_audio, name='transcribe'),
     
-    # Speaker identification endpoints
-    path('speaker/register/', views.register_speaker, name='register_speaker'),
-    path('speaker/identify/', views.identify_speaker, name='identify_speaker'),
-    path('speaker/list/', views.list_speakers, name='list_speakers'),
-    
+    path('speaker/list/', views.list_speakers, name='list_speakers'),    
     # TTS endpoints
     path('synthesize/', views.synthesize_speech, name='synthesize'),
     path('voices/', views.get_available_voices, name='available_voices'),

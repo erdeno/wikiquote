@@ -16,5 +16,11 @@
     "pitch": 1.2,
     "speed": 0.9,
     "energy": 1.1
+  },
+  "test4": {
+    "voice_type": "indian",
+    "pitch": 1.0,
+    "speed": 1.0,
+    "energy": 1.0
   }
 }

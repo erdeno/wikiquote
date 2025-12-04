@@ -4,29 +4,29 @@ from django.db.models.signals import post_save
 from django.dispatch import receiver
 
 class UserProfile(models.Model):
-    """
-    Extended user profile with voice preferences
-    """
+    """Extended user profile with voice preferences"""
     user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
     
-    # Voice settings
-    voice_registered = models.BooleanField(default=False)
-    voice_embedding_file = models.CharField(max_length=255, blank=True, null=True)
+    # Remove voice_registered field (or mark as deprecated)
+    # voice_registered = models.BooleanField(default=False)  # Remove this
     
     # TTS preferences
     VOICE_CHOICES = [
-        ('male_1', 'Male Voice 1'),
-        ('male_2', 'Male Voice 2'),
-        ('male_3', 'Male Voice 3'),
-        ('female_1', 'Female Voice 1'),
-        ('female_2', 'Female Voice 2'),
-        ('female_3', 'Female Voice 3'),
+        ('american', 'American English'),
+        ('uk', 'British English'),
+        ('irish', 'Irish English'),
+        ('indian', 'Indian English'),
+        ('african', 'Nigerian English'),
+        ('mexican', 'Mexican Spanish'),
+        ('french', 'French'),
+        ('italian', 'Italian'),
+        ('german', 'German'),
     ]
     
     tts_voice_type = models.CharField(
         max_length=20, 
         choices=VOICE_CHOICES, 
-        default='female_1'
+        default='american'
     )
     tts_pitch = models.FloatField(default=1.0)
     tts_speed = models.FloatField(default=1.0)

@@ -3,9 +3,36 @@ from typing import Optional, Dict
 import random
 
 class QuoteChatbot:
-    def __init__(self, quotes_api_url: str = "http://localhost:8000/api/v1/quotes/search/"):
-        self.quotes_api_url = quotes_api_url
     
+    def __init__(self, quotes_api_url: str = "http://localhost:8000/api/v1/quotes/search/", use_rag: bool = True):
+        self.use_rag = use_rag and os.getenv('ENABLE_RAG', 'false').lower() == 'true'
+        self.quotes_api_url = quotes_api_url
+        
+        if self.use_rag:
+            from rag.rag_chatbot import RAGChatbot
+            
+            llm_provider = os.getenv('LLM_PROVIDER', 'ollama')
+            
+            llm_config = {}
+            if llm_provider == 'ollama':
+                llm_config = {
+                    'model': os.getenv('OLLAMA_MODEL', 'llama3.2:3b'),
+                    'base_url': os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+                }
+            elif llm_provider == 'openai':
+                llm_config = {'api_key': os.getenv('OPENAI_API_KEY')}
+            elif llm_provider == 'anthropic':
+                llm_config = {'api_key': os.getenv('ANTHROPIC_API_KEY')}
+            
+            self.rag_bot = RAGChatbot(
+                neo4j_uri=os.getenv('NEO4J_URI', 'bolt://localhost:7687'),
+                neo4j_user=os.getenv('NEO4J_USER', 'neo4j'),
+                neo4j_password=os.getenv('NEO4J_PASSWORD'),
+                llm_provider=llm_provider,
+                llm_config=llm_config
+            )
+            print(f"✓ RAG Chatbot initialized with {llm_provider}")
+
     def get_personalized_greeting(self, username: str, accent: str = 'american') -> str:
         """Generate personalized greeting based on accent"""
         greetings = {

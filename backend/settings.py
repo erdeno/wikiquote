@@ -51,6 +51,7 @@ INSTALLED_APPS = [
     'backend.quotes',
     'backend.voice',
     'backend.accounts',
+    'services',
 
 ]
 

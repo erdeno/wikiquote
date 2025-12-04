@@ -7,6 +7,340 @@
     <script src="https://cdn.jsdelivr.net/npm/vue@3.3.4/dist/vue.global.prod.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        /* Chatbot Styles */
+        .chatbot-container {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 1000;
+        }
+
+        .chat-float-button {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .chat-float-button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .chat-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background: #ef4444;
+            color: white;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .chat-popup {
+            width: 400px;
+            height: 600px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .chat-header-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .chat-header-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 16px;
+            background: #f9fafb;
+        }
+
+        .chat-message {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .chat-message.user {
+            flex-direction: row-reverse;
+        }
+
+        .message-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .chat-message.user .message-avatar {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-message.assistant .message-avatar {
+            background: #e5e7eb;
+            color: #6b7280;
+        }
+
+        .message-content {
+            max-width: 70%;
+            position: relative;
+        }
+
+        .chat-message.user .message-content {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 16px 16px 4px 16px;
+            padding: 12px 16px;
+        }
+
+        .chat-message.assistant .message-content {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px 16px 16px 4px;
+            padding: 12px 16px;
+        }
+
+        .message-text {
+            margin: 0;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+
+        .message-time {
+            font-size: 10px;
+            color: rgba(0, 0, 0, 0.4);
+            display: block;
+            margin-top: 4px;
+        }
+
+        .chat-message.user .message-time {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .quote-card {
+            background: #f3f4f6;
+            border-left: 3px solid #6366f1;
+            padding: 8px 12px;
+            border-radius: 8px;
+            position: relative;
+        }
+
+        .similarity-badge {
+            display: inline-block;
+            background: #dbeafe;
+            color: #1e40af;
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 12px;
+            margin-top: 4px;
+            font-weight: 600;
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 4px;
+            padding: 8px 0;
+        }
+
+        .typing-indicator span {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #9ca3af;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-indicator span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+            }
+            30% {
+                transform: translateY(-10px);
+            }
+        }
+
+        .quick-questions-container {
+            padding: 12px 16px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .quick-question-btn {
+            background: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            padding: 8px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+        }
+
+        .quick-question-btn:hover {
+            background: #e5e7eb;
+            border-color: #6366f1;
+        }
+
+        .chat-input-container {
+            padding: 16px;
+            background: white;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .chat-input {
+            flex: 1;
+            padding: 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .chat-input:focus {
+            border-color: #6366f1;
+            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+        }
+
+        .chat-send-btn {
+            width: 44px;
+            height: 44px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .chat-send-btn:hover:not(:disabled) {
+            transform: scale(1.05);
+        }
+
+        .chat-send-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .voice-record-btn {
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            transition: all 0.3s;
+        }
+
+        .voice-record-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .voice-record-btn.recording {
+            background: #ef4444;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7);
+            }
+            50% {
+                box-shadow: 0 0 0 20px rgba(239, 68, 68, 0);
+            }
+        }
+
+        .chat-settings-footer {
+            padding: 8px 16px;
+            background: #f9fafb;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        /* Animation */
+        .slide-up-enter-active, .slide-up-leave-active {
+            transition: all 0.3s ease;
+        }
+
+        .slide-up-enter-from {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        .slide-up-leave-to {
+            transform: translateY(20px);
+            opacity: 0;
+        }
+
+        /* Responsive */
+        @media (max-width: 640px) {
+            .chat-popup {
+                width: calc(100vw - 40px);
+                height: calc(100vh - 100px);
+            }
+        }
+    </style>
 </head>
 <body>
     <div id="app">
@@ -179,35 +513,57 @@
                     <!-- Sidebar -->
                     <div class="space-y-6">
                         <!-- Speaker Registration -->
+                        <!-- Accent Preferences (Simplified) -->
                         <div class="bg-white rounded-2xl shadow-xl p-6">
                             <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                                <i class="fas fa-user"></i>
-                                Voice Registration
+                                <i class="fas fa-globe"></i>
+                                Voice Preferences
                             </h3>
                             
-                            <div v-if="user?.profile?.voice_registered" class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
-                                <i class="fas fa-check-circle text-green-600 mr-2"></i>
-                                <span class="text-sm text-green-700">Voice already registered</span>
+                            <p class="text-sm text-gray-600 mb-4">
+                                Choose your preferred accent for voice responses
+                            </p>
+                            
+                            <!-- Current Selection Display -->
+                            <div v-if="user?.profile?.tts_voice_type" class="mb-4 p-3 bg-indigo-50 border border-indigo-200 rounded-lg">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-3">
+                                        <span class="text-2xl">{{ getAccentFlag(user.profile.tts_voice_type) }}</span>
+                                        <div>
+                                            <p class="text-sm font-semibold text-gray-800">
+                                                {{ getAccentName(user.profile.tts_voice_type) }}
+                                            </p>
+                                            <p class="text-xs text-gray-500">Current accent</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        @click="testCurrentAccent"
+                                        class="px-3 py-1 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 text-sm"
+                                    >
+                                        <i class="fas fa-play mr-1"></i>
+                                        Test
+                                    </button>
+                                </div>
                             </div>
                             
-                            <div class="mb-4 space-y-2">
-                                <label class="text-sm font-semibold text-gray-700 flex items-center gap-2 mb-3">
-                                    <i class="fas fa-globe"></i>
-                                    Choose Your Accent
+                            <!-- Accent Selection Grid -->
+                            <div class="mb-4">
+                                <label class="text-sm font-semibold text-gray-700 mb-3 block">
+                                    Select Accent
                                 </label>
                                 
-                                <!-- Accent Selection Grid -->
                                 <div class="grid grid-cols-3 gap-2 max-h-64 overflow-y-auto">
                                     <div
                                         v-for="accent in availableAccents"
                                         :key="accent.id"
-                                        @click="ttsPreferences.accent = accent.id"
+                                        @click="selectAccent(accent.id)"
                                         :class="[
                                             'p-3 rounded-lg border-2 cursor-pointer transition-all hover:shadow-md',
                                             ttsPreferences.accent === accent.id 
                                                 ? 'border-indigo-600 bg-indigo-50' 
                                                 : 'border-gray-200 hover:border-indigo-300'
-                                        ]">
+                                        ]"
+                                    >
                                         <div class="text-center">
                                             <div class="text-3xl mb-1">{{ accent.flag }}</div>
                                             <p class="text-xs font-semibold text-gray-800">{{ accent.name }}</p>
@@ -223,60 +579,70 @@
                                 </div>
                             </div>
                             
-                            <div class="mb-3 space-y-2">
-                                <label class="text-sm text-gray-600 flex items-center gap-2">
-                                    <i class="fas fa-music"></i>
-                                    Voice Pitch
-                                </label>
-                                <input
-                                    v-model.number="ttsPreferences.pitch"
-                                    type="range"
-                                    min="0.5"
-                                    max="2.0"
-                                    step="0.1"
-                                    class="w-full"
-                                />
-                                <span class="text-xs text-gray-500">{{ ttsPreferences.pitch.toFixed(1) }}</span>
-                            </div>
+                            <!-- Optional: Advanced Settings (Collapsed) -->
+                            <details class="mt-4">
+                                <summary class="text-sm font-semibold text-gray-700 cursor-pointer hover:text-indigo-600">
+                                    <i class="fas fa-sliders-h mr-2"></i>
+                                    Advanced Settings
+                                </summary>
+                                
+                                <div class="mt-3 space-y-3">
+                                    <div>
+                                        <label class="text-xs text-gray-600 flex items-center gap-2">
+                                            <i class="fas fa-music"></i>
+                                            Pitch: {{ ttsPreferences.pitch.toFixed(1) }}
+                                        </label>
+                                        <input
+                                            v-model.number="ttsPreferences.pitch"
+                                            type="range"
+                                            min="0.5"
+                                            max="2.0"
+                                            step="0.1"
+                                            class="w-full"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="text-xs text-gray-600 flex items-center gap-2">
+                                            <i class="fas fa-tachometer-alt"></i>
+                                            Speed: {{ ttsPreferences.speed.toFixed(1) }}
+                                        </label>
+                                        <input
+                                            v-model.number="ttsPreferences.speed"
+                                            type="range"
+                                            min="0.5"
+                                            max="2.0"
+                                            step="0.1"
+                                            class="w-full"
+                                        />
+                                    </div>
+                                    
+                                    <div>
+                                        <label class="text-xs text-gray-600 flex items-center gap-2">
+                                            <i class="fas fa-bolt"></i>
+                                            Energy: {{ ttsPreferences.energy.toFixed(1) }}
+                                        </label>
+                                        <input
+                                            v-model.number="ttsPreferences.energy"
+                                            type="range"
+                                            min="0.5"
+                                            max="2.0"
+                                            step="0.1"
+                                            class="w-full"
+                                        />
+                                    </div>
+                                </div>
+                            </details>
                             
-                            <div class="mb-3 space-y-2">
-                                <label class="text-sm text-gray-600 flex items-center gap-2">
-                                    <i class="fas fa-tachometer-alt"></i>
-                                    Voice Speed
-                                </label>
-                                <input
-                                    v-model.number="ttsPreferences.speed"
-                                    type="range"
-                                    min="0.5"
-                                    max="2.0"
-                                    step="0.1"
-                                    class="w-full"
-                                />
-                                <span class="text-xs text-gray-500">{{ ttsPreferences.speed.toFixed(1) }}</span>
-                            </div>
-                            
-                            <div class="mb-3 space-y-2">
-                                <label class="text-sm text-gray-600 flex items-center gap-2">
-                                    <i class="fas fa-bolt"></i>
-                                    Voice Energy
-                                </label>
-                                <input
-                                    v-model.number="ttsPreferences.energy"
-                                    type="range"
-                                    min="0.5"
-                                    max="2.0"
-                                    step="0.1"
-                                    class="w-full"
-                                />
-                                <span class="text-xs text-gray-500">{{ ttsPreferences.energy.toFixed(1) }}</span>
-                            </div>
-                            
+                            <!-- Save Button -->
                             <button
-                                @click="registerSpeaker"
-                                class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                @click="saveAccentPreferences"
+                                class="w-full mt-4 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                                :disabled="!hasPreferenceChanges"
+                                :class="{'opacity-50 cursor-not-allowed': !hasPreferenceChanges}"
                             >
-                                <i class="fas fa-microphone mr-2"></i>
-                                {{ user?.profile?.voice_registered ? 'Re-register Voice' : 'Register Voice' }}
+                                <i class="fas fa-save mr-2"></i>
+                                Save Preferences
                             </button>
                         </div>
 
@@ -441,6 +807,200 @@
             </div>
         </div>
 
+        <!-- Add this component to your existing HTML, before the closing </div> of #app -->
+
+        <!-- Chatbot Popup Component -->
+        <div v-if="showChatbot || chatOpen" class="chatbot-container">
+            <!-- Floating Chat Button -->
+            <button
+                v-if="!chatOpen"
+                @click="openChat"
+                class="chat-float-button"
+                title="Chat with Quote Assistant"
+            >
+                <i class="fas fa-robot text-2xl"></i>
+                <span v-if="unreadMessages > 0" class="chat-badge">{{ unreadMessages }}</span>
+            </button>
+
+            <!-- Chat Popup -->
+            <transition name="slide-up">
+                <div v-if="chatOpen" class="chat-popup">
+                    <!-- Header -->
+                    <div class="chat-header">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center">
+                                <i class="fas fa-robot text-white"></i>
+                            </div>
+                            <div>
+                                <h3 class="font-bold text-white">Quote Assistant</h3>
+                                <p class="text-xs text-indigo-200">Powered by AI</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <!-- Mode Toggle -->
+                            <button
+                                @click="chatMode = chatMode === 'text' ? 'voice' : 'text'"
+                                class="chat-header-btn"
+                                :title="chatMode === 'text' ? 'Switch to Voice' : 'Switch to Text'"
+                            >
+                                <i :class="chatMode === 'text' ? 'fas fa-microphone' : 'fas fa-keyboard'"></i>
+                            </button>
+                            <!-- Clear Chat -->
+                            <button
+                                @click="clearChatHistory"
+                                class="chat-header-btn"
+                                title="Clear chat"
+                            >
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <!-- Close -->
+                            <button
+                                @click="closeChat"
+                                class="chat-header-btn"
+                                title="Close"
+                            >
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Messages Container -->
+                    <div ref="chatMessages" class="chat-messages">
+                        <div
+                            v-for="(message, index) in chatMessages"
+                            :key="index"
+                            :class="['chat-message', message.role]"
+                        >
+                            <div class="message-avatar">
+                                <i :class="message.role === 'user' ? 'fas fa-user' : 'fas fa-robot'"></i>
+                            </div>
+                            <div class="message-content">
+                                <p class="message-text">{{ message.content }}</p>
+                                
+                                <!-- Display quotes if available -->
+                                <div v-if="message.quotes && message.quotes.length > 0" class="mt-3 space-y-2">
+                                    <div
+                                        v-for="(quote, qIndex) in message.quotes"
+                                        :key="qIndex"
+                                        class="quote-card"
+                                    >
+                                        <p class="text-sm italic text-gray-700">
+                                            <i class="fas fa-quote-left text-indigo-400 text-xs mr-1"></i>
+                                            {{ quote.text }}
+                                            <i class="fas fa-quote-right text-indigo-400 text-xs ml-1"></i>
+                                        </p>
+                                        <p class="text-xs text-gray-600 mt-1">
+                                            — <strong>{{ quote.author }}</strong>
+                                            <span v-if="quote.work" class="text-gray-500">({{ quote.work }})</span>
+                                        </p>
+                                        <span v-if="quote.similarity" class="similarity-badge">
+                                            {{ (quote.similarity * 100).toFixed(0) }}% match
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <span class="message-time">{{ formatMessageTime(message.timestamp) }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Typing Indicator -->
+                        <div v-if="chatLoading" class="chat-message assistant">
+                            <div class="message-avatar">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="typing-indicator">
+                                    <span></span>
+                                    <span></span>
+                                    <span></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Recording Indicator -->
+                        <div v-if="chatRecording" class="chat-message assistant">
+                            <div class="message-avatar">
+                                <i class="fas fa-microphone text-red-500 animate-pulse"></i>
+                            </div>
+                            <div class="message-content">
+                                <p class="text-red-500 font-semibold">Recording... Click to stop</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Questions (shown when chat is empty) -->
+                    <div v-if="chatMessages.length === 1 && !chatLoading" class="quick-questions-container">
+                        <p class="text-xs text-gray-500 mb-2">Try asking:</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button
+                                v-for="(question, idx) in quickQuestions"
+                                :key="idx"
+                                @click="sendQuickQuestion(question)"
+                                class="quick-question-btn"
+                            >
+                                {{ question }}
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Input Area -->
+                    <div class="chat-input-container">
+                        <!-- Text Mode Input -->
+                        <div v-if="chatMode === 'text'" class="flex gap-2">
+                            <input
+                                v-model="chatInput"
+                                @keypress.enter="sendChatMessage"
+                                type="text"
+                                placeholder="Ask about quotes..."
+                                class="chat-input"
+                                :disabled="chatLoading"
+                                ref="chatInputField"
+                            />
+                            <button
+                                @click="sendChatMessage"
+                                :disabled="chatLoading || !chatInput.trim()"
+                                class="chat-send-btn"
+                            >
+                                <i class="fas fa-paper-plane"></i>
+                            </button>
+                        </div>
+
+                        <!-- Voice Mode Input -->
+                        <div v-else class="flex items-center justify-center gap-4 py-2">
+                            <button
+                                @click="toggleChatRecording"
+                                :disabled="chatLoading"
+                                :class="[
+                                    'voice-record-btn',
+                                    chatRecording ? 'recording' : ''
+                                ]"
+                            >
+                                <i :class="chatRecording ? 'fas fa-stop' : 'fas fa-microphone'"></i>
+                            </button>
+                            <p class="text-sm text-gray-600">
+                                {{ chatRecording ? 'Recording... Click to stop' : 'Click to start voice input' }}
+                            </p>
+                        </div>
+                    </div>
+
+                    <!-- Settings Footer -->
+                    <div class="chat-settings-footer">
+                        <div class="flex items-center gap-2 text-xs text-gray-500">
+                            <span>Accent:</span>
+                            <select
+                                v-model="chatAccent"
+                                class="text-xs border rounded px-2 py-1"
+                            >
+                                <option v-for="accent in availableAccents" :key="accent.id" :value="accent.id">
+                                    {{ accent.flag }} {{ accent.name }}
+                                </option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </transition>
+        </div>
+
         <!-- Hidden audio element -->
         <audio ref="audioPlayer"></audio>
     </div>
@@ -465,6 +1025,31 @@
                     mediaRecorder: null,
                     audioChunks: [],
                     responseAudioUrl: null,
+
+                    // Chatbot data
+                    showChatbot: true,
+                    chatOpen: false,
+                    chatMode: 'text', // 'text' or 'voice'
+                    chatInput: '',
+                    chatMessages: [
+                        {
+                            role: 'assistant',
+                            content: "Hi! I'm your AI quote assistant. Ask me about wisdom, courage, love, or any topic! 💭",
+                            timestamp: new Date()
+                        }
+                    ],
+                    chatLoading: false,
+                    chatRecording: false,
+                    chatAccent: 'american',
+                    unreadMessages: 0,
+                    chatMediaRecorder: null,
+                    chatAudioChunks: [],
+                    quickQuestions: [
+                        "Tell me about wisdom",
+                        "I need motivation",
+                        "Quote about love",
+                        "Something inspiring"
+                    ],
                     
                     // User data
                     user: null,
@@ -506,6 +1091,14 @@
                 },
                 userQueries() {
                     return this.user?.profile?.queries_count || 0;
+                },
+                hasPreferenceChanges() {
+                    if (!this.user?.profile) return false;
+                    
+                    return this.ttsPreferences.accent !== this.user.profile.tts_voice_type ||
+                        this.ttsPreferences.pitch !== this.user.profile.tts_pitch ||
+                        this.ttsPreferences.speed !== this.user.profile.tts_speed ||
+                        this.ttsPreferences.energy !== this.user.profile.tts_energy;
                 }
             },
             
@@ -514,6 +1107,7 @@
                 this.requestMicrophonePermission();
                 this.checkApiStatus();
                 this.loadAvailableVoices();
+                this.loadUserPreferences();
 
                 setTimeout(() => this.playWelcomeMessage(), 1000);
                 
@@ -767,58 +1361,66 @@
                     this.history = [item, ...this.history].slice(0, 10);
                 },
 
-                async registerSpeaker() {
+                selectAccent(accentId) {
+                    this.ttsPreferences.accent = accentId;
+                },
+                
+                async saveAccentPreferences() {
                     if (!this.user) {
                         alert('Please login first');
                         return;
                     }
-
+                    
                     try {
-                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                        const mediaRecorder = new MediaRecorder(stream);
-                        const chunks = [];
-
-                        mediaRecorder.ondataavailable = (e) => chunks.push(e.data);
-
-                        mediaRecorder.onstop = async () => {
-                            const audioBlob = new Blob(chunks, { type: 'audio/wav' });
-                            const formData = new FormData();
-                            formData.append('audio', audioBlob, 'speaker.wav');
-                            formData.append('speaker_id', this.user.username);
-                            formData.append('voice_type', this.ttsPreferences.accent);
-                            formData.append('pitch', this.ttsPreferences.pitch);
-                            formData.append('speed', this.ttsPreferences.speed);
-                            formData.append('energy', this.ttsPreferences.energy);
-
-                            const response = await fetch(`${this.apiUrl}/voice/speaker/register/`, {
-                                method: 'POST',
-                                headers: {
-                                    'Authorization': `Token ${this.authToken}`
-                                },
-                                body: formData,
-                            });
-
-                            const data = await response.json();
-                            if (data.success) {
-                                alert(`Voice registered successfully for ${this.user.username} with ${this.ttsPreferences.voice_type}!`);
-                                // Update user profile
-                                this.user.profile.voice_registered = true;
-                                this.user.profile.tts_voice_type = this.ttsPreferences.voice_type;
-                                localStorage.setItem('user', JSON.stringify(this.user));
-                            } else {
-                                alert('Registration failed: ' + data.error);
-                            }
-
-                            stream.getTracks().forEach(track => track.stop());
-                        };
-
-                        alert('Recording for 3 seconds... Please speak naturally.');
-                        mediaRecorder.start();
-                        setTimeout(() => mediaRecorder.stop(), 3000);
+                        const response = await fetch(`${this.apiUrl}/voice/tts/preferences/set/`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Token ${this.authToken}`,
+                                'Content-Type': 'application/json'
+                            },
+                            body: JSON.stringify({
+                                voice_type: this.ttsPreferences.accent,
+                                pitch: this.ttsPreferences.pitch,
+                                speed: this.ttsPreferences.speed,
+                                energy: this.ttsPreferences.energy
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            // Update local user object
+                            this.user.profile.tts_voice_type = this.ttsPreferences.accent;
+                            this.user.profile.tts_pitch = this.ttsPreferences.pitch;
+                            this.user.profile.tts_speed = this.ttsPreferences.speed;
+                            this.user.profile.tts_energy = this.ttsPreferences.energy;
+                            
+                            localStorage.setItem('user', JSON.stringify(this.user));
+                            
+                            alert(`Accent preferences saved! Responses will be in ${this.getAccentName(this.ttsPreferences.accent)}`);
+                        } else {
+                            alert('Failed to save preferences: ' + (data.error || 'Unknown error'));
+                        }
                     } catch (error) {
-                        console.error('Error registering speaker:', error);
-                        alert('Failed to register speaker');
+                        console.error('Error saving preferences:', error);
+                        alert('Failed to save preferences');
                     }
+                },
+                
+                getAccentFlag(accentId) {
+                    const accent = this.availableAccents.find(a => a.id === accentId);
+                    return accent ? accent.flag : '🌍';
+                },
+                
+                getAccentName(accentId) {
+                    const accent = this.availableAccents.find(a => a.id === accentId);
+                    return accent ? accent.name : 'Unknown';
+                },
+                
+                async testCurrentAccent() {
+                    if (!this.user?.profile?.tts_voice_type) return;
+                    
+                    await this.testSpecificAccent(this.user.profile.tts_voice_type);
                 },
                 
                 async testVoice() {
@@ -962,12 +1564,20 @@
                 
                 loadCurrentPreferences() {
                     if (this.user?.profile) {
-                        this.ttsPreferences.voice_type = this.user.profile.tts_voice_type || 'female_1';
+                        this.ttsPreferences.voice_type = this.user.profile.tts_voice_type || 'american';
                         this.ttsPreferences.pitch = this.user.profile.tts_pitch || 1.0;
                         this.ttsPreferences.speed = this.user.profile.tts_speed || 1.0;
                         this.ttsPreferences.energy = this.user.profile.tts_energy || 1.0;
                     }
                     this.showProfileModal = false;
+                },
+                loadUserPreferences() {
+                    if (this.user?.profile) {
+                        this.ttsPreferences.accent = this.user.profile.tts_voice_type || 'american';
+                        this.ttsPreferences.pitch = this.user.profile.tts_pitch || 1.0;
+                        this.ttsPreferences.speed = this.user.profile.tts_speed || 1.0;
+                        this.ttsPreferences.energy = this.user.profile.tts_energy || 1.0;
+                    }
                 },
                 
                 formatDate(dateStr) {
@@ -999,6 +1609,259 @@
                     
                     // Format as date
                     return date.toLocaleDateString();
+                },
+                // Chatbot Methods
+                openChat() {
+                    this.chatOpen = true;
+                    this.unreadMessages = 0;
+                    this.$nextTick(() => {
+                        if (this.$refs.chatInputField) {
+                            this.$refs.chatInputField.focus();
+                        }
+                        this.scrollChatToBottom();
+                    });
+                },
+                
+                closeChat() {
+                    this.chatOpen = false;
+                },
+                
+                async sendChatMessage() {
+                    if (!this.chatInput.trim() || this.chatLoading) return;
+                    
+                    const userMessage = {
+                        role: 'user',
+                        content: this.chatInput,
+                        timestamp: new Date()
+                    };
+                    
+                    this.chatMessages.push(userMessage);
+                    const query = this.chatInput;
+                    this.chatInput = '';
+                    this.chatLoading = true;
+                    
+                    this.$nextTick(() => this.scrollChatToBottom());
+                    
+                    try {
+                        const response = await fetch(`${this.apiUrl}/quotes/chat/`, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': this.authToken ? `Token ${this.authToken}` : ''
+                            },
+                            body: JSON.stringify({
+                                query: query,
+                                username: this.user?.first_name || this.user?.username || 'friend',
+                                accent: this.chatAccent
+                            })
+                        });
+                        
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const assistantMessage = {
+                                role: 'assistant',
+                                content: data.response,
+                                quotes: data.quotes || [],
+                                method: data.method,
+                                timestamp: new Date()
+                            };
+                            
+                            this.chatMessages.push(assistantMessage);
+                            
+                            // If chat is closed, increment unread counter
+                            if (!this.chatOpen) {
+                                this.unreadMessages++;
+                            }
+                        } else {
+                            throw new Error(data.error || 'Failed to get response');
+                        }
+                    } catch (error) {
+                        console.error('Chat error:', error);
+                        const errorMessage = {
+                            role: 'assistant',
+                            content: "Sorry, I'm having trouble connecting. Please try again! 😅",
+                            timestamp: new Date()
+                        };
+                        this.chatMessages.push(errorMessage);
+                    } finally {
+                        this.chatLoading = false;
+                        this.$nextTick(() => this.scrollChatToBottom());
+                    }
+                },
+                
+                sendQuickQuestion(question) {
+                    this.chatInput = question;
+                    this.sendChatMessage();
+                },
+                
+                async toggleChatRecording() {
+                    if (this.chatRecording) {
+                        this.stopChatRecording();
+                    } else {
+                        await this.startChatRecording();
+                    }
+                },
+                
+                async startChatRecording() {
+                    try {
+                        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                        this.chatMediaRecorder = new MediaRecorder(stream);
+                        this.chatAudioChunks = [];
+                        
+                        this.chatMediaRecorder.ondataavailable = (event) => {
+                            this.chatAudioChunks.push(event.data);
+                        };
+                        
+                        this.chatMediaRecorder.onstop = async () => {
+                            const audioBlob = new Blob(this.chatAudioChunks, { type: 'audio/wav' });
+                            await this.processChatVoiceQuery(audioBlob);
+                            stream.getTracks().forEach(track => track.stop());
+                        };
+                        
+                        this.chatMediaRecorder.start();
+                        this.chatRecording = true;
+                    } catch (error) {
+                        console.error('Error starting chat recording:', error);
+                        alert('Could not access microphone. Please ensure permissions are granted.');
+                    }
+                },
+                
+                stopChatRecording() {
+                    if (this.chatMediaRecorder && this.chatRecording) {
+                        this.chatMediaRecorder.stop();
+                        this.chatRecording = false;
+                    }
+                },
+                
+                async processChatVoiceQuery(audioBlob) {
+                    this.chatLoading = true;
+                    
+                    const formData = new FormData();
+                    formData.append('audio', audioBlob, 'query.wav');
+                    
+                    try {
+                        // First, transcribe the audio
+                        const asrResponse = await fetch(`${this.apiUrl}/voice/asr/`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': this.authToken ? `Token ${this.authToken}` : ''
+                            },
+                            body: formData
+                        });
+                        
+                        const asrData = await asrResponse.json();
+                        
+                        if (asrData.success && asrData.transcription) {
+                            // Add user message with transcription
+                            const userMessage = {
+                                role: 'user',
+                                content: asrData.transcription,
+                                timestamp: new Date()
+                            };
+                            this.chatMessages.push(userMessage);
+                            this.$nextTick(() => this.scrollChatToBottom());
+                            
+                            // Now send to RAG chat endpoint
+                            const chatResponse = await fetch(`${this.apiUrl}/quotes/chat/`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': this.authToken ? `Token ${this.authToken}` : ''
+                                },
+                                body: JSON.stringify({
+                                    query: asrData.transcription,
+                                    username: this.user?.first_name || this.user?.username || 'friend',
+                                    accent: this.chatAccent
+                                })
+                            });
+                            
+                            const chatData = await chatResponse.json();
+                            
+                            if (chatData.success) {
+                                const assistantMessage = {
+                                    role: 'assistant',
+                                    content: chatData.response,
+                                    quotes: chatData.quotes || [],
+                                    method: chatData.method,
+                                    timestamp: new Date()
+                                };
+                                this.chatMessages.push(assistantMessage);
+                                
+                                // Synthesize speech response
+                                const ttsResponse = await fetch(`${this.apiUrl}/voice/synthesize/`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ 
+                                        text: chatData.response,
+                                        voice_type: this.chatAccent
+                                    })
+                                });
+                                
+                                if (ttsResponse.ok) {
+                                    const audioBlob = await ttsResponse.blob();
+                                    const audioUrl = URL.createObjectURL(audioBlob);
+                                    if (this.$refs.audioPlayer) {
+                                        this.$refs.audioPlayer.src = audioUrl;
+                                        this.$refs.audioPlayer.play();
+                                    }
+                                }
+                            }
+                        } else {
+                            throw new Error('Failed to transcribe audio');
+                        }
+                    } catch (error) {
+                        console.error('Error processing voice query:', error);
+                        const errorMessage = {
+                            role: 'assistant',
+                            content: "Sorry, I couldn't understand that. Please try again! 😅",
+                            timestamp: new Date()
+                        };
+                        this.chatMessages.push(errorMessage);
+                    } finally {
+                        this.chatLoading = false;
+                        this.$nextTick(() => this.scrollChatToBottom());
+                    }
+                },
+                
+                clearChatHistory() {
+                    if (confirm('Clear all chat messages?')) {
+                        this.chatMessages = [
+                            {
+                                role: 'assistant',
+                                content: "Chat cleared! Ask me anything about quotes! 💭",
+                                timestamp: new Date()
+                            }
+                        ];
+                    }
+                },
+                
+                scrollChatToBottom() {
+                    if (this.$refs.chatMessages) {
+                        this.$nextTick(() => {
+                            this.$refs.chatMessages.scrollTop = this.$refs.chatMessages.scrollHeight;
+                        });
+                    }
+                },
+                
+                formatMessageTime(date) {
+                    const now = new Date();
+                    const diff = now - date;
+                    
+                    // Less than 1 minute
+                    if (diff < 60000) return 'Just now';
+                    
+                    // Less than 1 hour
+                    if (diff < 3600000) {
+                        const mins = Math.floor(diff / 60000);
+                        return `${mins}m ago`;
+                    }
+                    
+                    // Show time
+                    return date.toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit' 
+                    });
                 }
             }
         }).mount('#app');

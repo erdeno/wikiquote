@@ -224,7 +224,7 @@ def list_speakers(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def voice_query(request):
-    """Complete voice pipeline with personalization"""
+    """Voice pipeline: ASR → RAG → TTS (no speaker identification)"""
     if 'audio' not in request.FILES:
         return Response({'error': 'No audio file provided'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -234,25 +234,21 @@ def voice_query(request):
     try:
         audio_bytes = audio_file.read()
         
-        # Get user's accent preference
-        user_accent = user.profile.tts_voice_type  # This will be the accent now
+        # Get user's accent preference from profile
+        user_accent = user.profile.tts_voice_type
         username = user.first_name or user.username
         
-        # Step 1: Transcribe
+        # Step 1: Transcribe only (no speaker identification)
         asr = get_asr_service()
         transcription_result = asr.transcribe_bytes(audio_bytes)
         user_query = transcription_result['text']
         
-        # Step 2: Identify speaker
-        speaker_svc = get_speaker_service()
-        speaker_id = speaker_svc.identify_speaker(audio_bytes, threshold=0.25)
-        
-        # Step 3: Process with personalized chatbot
+        # Step 2: Process with RAG chatbot
         chatbot = QuoteChatbot()
         chat_result = chatbot.process_query(user_query, username=username, accent=user_accent)
         response_text = chat_result['response']
         
-        # Step 4: Synthesize with user's accent
+        # Step 3: Synthesize with user's selected accent
         tts = get_tts_service()
         response_audio = tts.synthesize_to_bytes(response_text, speaker_id=user.username)
         
@@ -270,11 +266,9 @@ def voice_query(request):
             'transcription': user_query,
             'response_text': response_text,
             'response_audio': audio_base64,
-            'identified_speaker': speaker_id,
-            'matches_user': speaker_id == user.username if speaker_id else False,
+            'accent_used': user_accent,
             'quote_found': chat_result['quote_found'],
-            'quote_data': chat_result['quote_data'],
-            'accent_used': user_accent
+            'quote_data': chat_result['quote_data']
         })
     
     except Exception as e:
@@ -282,6 +276,7 @@ def voice_query(request):
         traceback.print_exc()
         return Response({'error': str(e)}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
+        
 # Add this new endpoint
 @api_view(['GET'])
 @permission_classes([AllowAny])
@@ -373,8 +368,8 @@ def register_speaker(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def set_tts_preferences(request):
-    """Set TTS preferences for authenticated user"""
-    voice_type = request.data.get('voice_type', 'female_1')
+    """Set TTS preferences (accent only, no voice recording needed)"""
+    voice_type = request.data.get('voice_type', 'american')
     pitch = float(request.data.get('pitch', 1.0))
     speed = float(request.data.get('speed', 1.0))
     energy = float(request.data.get('energy', 1.0))
@@ -390,13 +385,13 @@ def set_tts_preferences(request):
         profile.tts_energy = energy
         profile.save()
         
-        # Update TTS service
+        # Update TTS service preferences
         tts = get_tts_service()
         tts.set_user_preferences(user.username, voice_type, pitch, speed, energy)
         
         return Response({
             'success': True,
-            'message': f'TTS preferences updated for {user.username}',
+            'message': f'Accent preferences updated to {voice_type}',
             'preferences': {
                 'voice_type': voice_type,
                 'pitch': pitch,
@@ -406,11 +401,12 @@ def set_tts_preferences(request):
         })
     
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         return Response(
             {'error': str(e)},
             status=status.HTTP_500_INTERNAL_SERVER_ERROR
         )
-
 
 # Update get_tts_preferences
 @api_view(['GET'])

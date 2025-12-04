@@ -58,7 +58,7 @@ class GTTSService:
         except Exception as e:
             print(f"Error saving preferences: {e}")
     
-    def set_user_preferences(self, speaker_id: str, voice_type: str = 'female_1',
+    def set_user_preferences(self, speaker_id: str, voice_type: str = 'american',
                            pitch: float = 1.0, speed: float = 1.0, energy: float = 1.0):
         self.user_preferences[speaker_id] = {
             'voice_type': voice_type,
@@ -73,8 +73,8 @@ class GTTSService:
                           voice_type: Optional[str] = None) -> bool:
         try:
             prefs = self.user_preferences.get(speaker_id, {})
-            selected_voice = voice_type or prefs.get('voice_type', 'female_1')
-            config = self.voice_configs.get(selected_voice, self.voice_configs['female_1'])
+            selected_voice = voice_type or prefs.get('voice_type', 'american')
+            config = self.voice_configs.get(selected_voice, self.voice_configs['american'])
             
             print(f"🎤 gTTS synthesis: {selected_voice} (pitch={config['pitch']}, speed={config['speed']})")
             
