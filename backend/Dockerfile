@@ -1,7 +1,5 @@
-# Backend Dockerfile
 FROM python:3.10-slim
 
-# Set working directory
 WORKDIR /app
 
 # Install system dependencies
@@ -14,28 +12,27 @@ RUN apt-get update && apt-get install -y \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements
+# Copy and install Python dependencies
 COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt gunicorn
 
-# Install Python dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy backend code
+# Copy application code
 COPY backend/ /app/backend/
 COPY services/ /app/services/
 COPY manage.py /app/
-COPY db.sqlite3 /app/
-COPY speaker_embeddings.json /app/
-COPY tts_preferences.json /app/
 
-# Create necessary directories
-RUN mkdir -p /app/backend/media /app/backend/static
+# Create necessary files and directories
+RUN touch /app/db.sqlite3 && \
+    echo '{}' > /app/speaker_embeddings.json && \
+    echo '{}' > /app/tts_preferences.json && \
+    mkdir -p /app/backend/media /app/backend/static /root/.cache/huggingface
 
-# Set Python path
-ENV PYTHONPATH=/app:$PYTHONPATH
+# Set environment variables
+ENV PYTHONPATH=/app
+ENV PYTHONUNBUFFERED=1
+ENV DJANGO_SETTINGS_MODULE=backend.settings
 
-# Expose port
 EXPOSE 8000
 
-# Run migrations and start server
-CMD ["sh", "-c", "python manage.py migrate && python manage.py runserver 0.0.0.0:8000"]
+# Use gunicorn for production
+CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
