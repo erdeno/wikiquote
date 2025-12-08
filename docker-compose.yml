@@ -1,33 +1,58 @@
-version: "3.9"
+version: '3.8'
 
 services:
-  autocomplete:
-    build: ./services/autocomplete
+  # Backend - Django API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    container_name: wikiquote-backend
     ports:
       - "8000:8000"
+    volumes:
+      - ./db.sqlite3:/app/db.sqlite3
+      - ./speaker_embeddings.json:/app/speaker_embeddings.json
+      - ./tts_preferences.json:/app/tts_preferences.json
+      - ./backend:/app/backend
+      - ./services:/app/services
+    environment:
+      - DJANGO_SETTINGS_MODULE=backend.settings
+      - NEO4J_URI=${NEO4J_URI:-bolt://localhost:7687}
+      - NEO4J_USER=${NEO4J_USER:-neo4j}
+      - NEO4J_PASSWORD=${NEO4J_PASSWORD:-your_password}
+      - PYTHONUNBUFFERED=1
+    depends_on:
+      - ollama
+    networks:
+      - wikiquote-network
 
-  asr:
-    build: ./services/asr
+  # Frontend - Nginx serving static files
+  frontend:
+    build:
+      context: .
+      dockerfile: frontend/Dockerfile
+    container_name: wikiquote-frontend
     ports:
-      - "8001:8000"
+      - "8080:8080"
+    depends_on:
+      - backend
+    networks:
+      - wikiquote-network
 
-  speaker:
-    build: ./services/speaker
+  # Ollama - Local LLM service
+  ollama:
+    image: ollama/ollama:latest
+    container_name: wikiquote-ollama
     ports:
-      - "8002:8000"
+      - "11434:11434"
+    volumes:
+      - ollama-data:/root/.ollama
+    networks:
+      - wikiquote-network
 
-  chatbot:
-    build: ./services/chatbot
-    ports:
-      - "8003:8000"
+networks:
+  wikiquote-network:
+    driver: bridge
 
-  tts:
-    build: ./services/tts
-    ports:
-      - "8004:8000"
-
-  etl:
-    build: ./services/etl
-    ports:
-      - "8005:8000"
-
+volumes:
+  ollama-data:
