@@ -38,8 +38,10 @@ jobs:
         NEO4J_URI: ${{ secrets.NEO4J_URI }}
         NEO4J_USER: ${{ secrets.NEO4J_USER }}
         NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+        DJANGO_SETTINGS_MODULE: backend.settings
+        PYTHONPATH: ${{ github.workspace }}
       run: |
-        python manage.py test
+        python manage.py test backend.tests
       continue-on-error: true
 
   # Job 2: Build Docker Images
