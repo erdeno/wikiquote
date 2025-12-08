@@ -100,7 +100,7 @@ jobs:
         resource-group: wikiquote-rg
         name: wikiquote-backend
         image: ${{ secrets.DOCKER_USERNAME }}/wikiquote-backend:latest
-        location: westeurope
+        location: germanywestcentral
         dns-name-label: wikiquote-backend
         ports: 8000
         environment-variables: NEO4J_URI=${{ secrets.NEO4J_URI }} NEO4J_USER=${{ secrets.NEO4J_USER }} NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }} DJANGO_SETTINGS_MODULE=backend.settings PYTHONUNBUFFERED=1
@@ -113,7 +113,7 @@ jobs:
         resource-group: wikiquote-rg
         name: wikiquote-frontend
         image: ${{ secrets.DOCKER_USERNAME }}/wikiquote-frontend:latest
-        location: westeurope
+        location: germanywestcentral
         dns-name-label: wikiquote-frontend
         ports: 8080
         cpu: 0.5
@@ -125,7 +125,7 @@ jobs:
         resource-group: wikiquote-rg
         name: wikiquote-ollama
         image: ollama/ollama:latest
-        location: westeurope
+        location: germanywestcentral
         dns-name-label: wikiquote-ollama
         ports: 11434
         cpu: 2
