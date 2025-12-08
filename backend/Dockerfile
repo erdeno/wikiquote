@@ -27,7 +27,6 @@ COPY manage.py /app/
 COPY db.sqlite3 /app/
 COPY speaker_embeddings.json /app/
 COPY tts_preferences.json /app/
-COPY pretrained_models/ /app/pretrained_models/
 
 # Create necessary directories
 RUN mkdir -p /app/backend/media /app/backend/static
