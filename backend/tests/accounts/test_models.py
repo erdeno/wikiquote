@@ -23,7 +23,7 @@ class TestUserProfile:
         user = User.objects.create_user(username='testuser', password='test')
         profile = user.profile
         
-        assert profile.tts_voice_type == 'female_1'
+        assert profile.tts_voice_type == 'american'
         assert profile.tts_pitch == 1.0
         assert profile.tts_speed == 1.0
         assert profile.tts_energy == 1.0
