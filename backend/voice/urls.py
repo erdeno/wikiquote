@@ -8,6 +8,7 @@ urlpatterns = [
     path('transcribe/', views.transcribe_audio, name='transcribe'),
     
     path('speaker/list/', views.list_speakers, name='list_speakers'),    
+    path('speaker/register/', views.register_speaker, name='register_speaker'),    
     # TTS endpoints
     path('synthesize/', views.synthesize_speech, name='synthesize'),
     path('voices/', views.get_available_voices, name='available_voices'),
