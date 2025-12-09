@@ -25,7 +25,7 @@ COPY manage.py /app/
 RUN touch /app/db.sqlite3 && \
     echo '{}' > /app/speaker_embeddings.json && \
     echo '{}' > /app/tts_preferences.json && \
-    mkdir -p /app/backend/media /app/backend/static /root/.cache/huggingface
+    mkdir -p /app/backend/media /app/backend/static /app/backend/staticfiles /root/.cache/huggingface
 
 # Set environment variables
 ENV PYTHONPATH=/app
@@ -34,5 +34,22 @@ ENV DJANGO_SETTINGS_MODULE=backend.settings
 
 EXPOSE 8000
 
-# Remove collectstatic, just run migrations and start server
-CMD ["sh", "-c", "python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile -"]
+# Test Django can start before running gunicorn
+CMD ["sh", "-c", "\
+    echo '=== Starting Django Backend ===' && \
+    echo 'PYTHONPATH='$PYTHONPATH && \
+    echo 'Testing Python imports...' && \
+    python -c 'import django; print(\"Django version:\", django.VERSION)' && \
+    python -c 'import backend.settings; print(\"Settings loaded\")' && \
+    echo 'Running migrations...' && \
+    python manage.py migrate --noinput && \
+    echo 'Migrations complete!' && \
+    echo 'Starting Gunicorn...' && \
+    exec gunicorn backend.wsgi:application \
+        --bind 0.0.0.0:8000 \
+        --workers 2 \
+        --timeout 120 \
+        --log-level debug \
+        --access-logfile - \
+        --error-logfile - \
+"]
