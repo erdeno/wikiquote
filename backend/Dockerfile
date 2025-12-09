@@ -34,5 +34,5 @@ ENV DJANGO_SETTINGS_MODULE=backend.settings
 
 EXPOSE 8000
 
-# Use gunicorn for production
-CMD ["sh", "-c", "python manage.py migrate && python manage.py collectstatic --noinput && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 2"]
+# Remove collectstatic, just run migrations and start server
+CMD ["sh", "-c", "python manage.py migrate && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 2 --access-logfile - --error-logfile -"]
