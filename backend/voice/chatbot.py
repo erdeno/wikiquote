@@ -87,6 +87,20 @@ class QuoteChatbot:
         accent_greetings = greetings.get(accent, greetings['american'])
         return random.choice(accent_greetings)
     
+    def search_quote(self, query: str) -> Optional[Dict]:
+        """Search for a quote (for backward compatibility with tests)"""
+        try:
+            response = requests.get(self.quotes_api_url, params={'q': query}, timeout=5)
+            if response.status_code == 200:
+                data = response.json()
+                results = data.get('results', [])
+                return results[0] if results else None
+            return None
+        except Exception as e:
+            print(f"Error searching quote: {e}")
+            return None
+    
+    
     def craft_response(self, user_query: str, quote_data: Optional[Dict] = None, 
                       username: str = None, accent: str = 'american') -> str:
         """Craft response with personalization"""

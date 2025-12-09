@@ -7,6 +7,9 @@ from django.conf import settings
 # Configure Django settings before any imports
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'settings')
 
+# Set SECRET_KEY for tests
+os.environ.setdefault('SECRET_KEY', 'test-secret-key-for-testing-only-12345')
+
 # Add project root to path
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, BASE_DIR)
