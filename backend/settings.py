@@ -120,6 +120,9 @@ DATABASES = {
     }
 }
 
+NEOMODEL_NEO4J_BOLT_URL = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
+NEOMODEL_SIGNALS = True
+NEOMODEL_FORCE_TIMEZONE = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

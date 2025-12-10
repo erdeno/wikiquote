@@ -1,129 +1,85 @@
-from rest_framework import status, generics
-from rest_framework.decorators import api_view, permission_classes
+from .neo_models import NeoUser, NeoAuthToken
+from rest_framework.decorators import api_view
 from rest_framework.response import Response
-from rest_framework.permissions import AllowAny, IsAuthenticated
-from rest_framework.authtoken.models import Token
-from django.contrib.auth import authenticate
-from django.contrib.auth.models import User
-from .serializers import RegisterSerializer, LoginSerializer, UserSerializer
-from .models import UserProfile
+import secrets
 
 @api_view(['POST'])
-@permission_classes([AllowAny])
 def register(request):
-    """
-    Register a new user
-    """
-    serializer = RegisterSerializer(data=request.data)
+    """Register using Neo4j"""
+    username = request.data.get('username')
+    email = request.data.get('email')
+    password = request.data.get('password')
     
-    if serializer.is_valid():
-        user = serializer.save()
-        token, created = Token.objects.get_or_create(user=user)
-        
+    # Check if user exists
+    if NeoUser.nodes.filter(username=username).first():
         return Response({
-            'success': True,
-            'user': UserSerializer(user).data,
-            'token': token.key,
-            'message': 'User registered successfully'
-        }, status=status.HTTP_201_CREATED)
+            'success': False,
+            'errors': {'username': ['Username already exists']}
+        }, status=400)
     
-    return Response({
-        'success': False,
-        'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([AllowAny])
-def login(request):
-    """
-    Login user and return token
-    """
-    serializer = LoginSerializer(data=request.data)
-    
-    if serializer.is_valid():
-        username = serializer.validated_data['username']
-        password = serializer.validated_data['password']
-        
-        user = authenticate(username=username, password=password)
-        
-        if user:
-            token, created = Token.objects.get_or_create(user=user)
-            
-            return Response({
-                'success': True,
-                'user': UserSerializer(user).data,
-                'token': token.key,
-                'message': 'Login successful'
-            })
-        else:
-            return Response({
-                'success': False,
-                'error': 'Invalid credentials'
-            }, status=status.HTTP_401_UNAUTHORIZED)
-    
-    return Response({
-        'success': False,
-        'errors': serializer.errors
-    }, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def logout(request):
-    """
-    Logout user by deleting token
-    """
+    # Create user
     try:
-        request.user.auth_token.delete()
+        user = NeoUser.create_user(
+            username=username,
+            email=email,
+            password=password
+        )
+        
+        # Create token
+        token_key = secrets.token_hex(20)
+        token = NeoAuthToken(key=token_key, user_id=user.uid)
+        token.save()
+        
         return Response({
             'success': True,
-            'message': 'Logout successful'
+            'user': {
+                'id': user.uid,
+                'username': user.username,
+                'email': user.email
+            },
+            'token': token_key
         })
     except Exception as e:
         return Response({
             'success': False,
-            'error': str(e)
-        }, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
+            'errors': {'detail': str(e)}
+        }, status=400)
 
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_profile(request):
-    """
-    Get current user profile
-    """
-    serializer = UserSerializer(request.user)
-    return Response({
-        'success': True,
-        'user': serializer.data
-    })
-
-
-@api_view(['PUT'])
-@permission_classes([IsAuthenticated])
-def update_profile(request):
-    """
-    Update user profile
-    """
-    user = request.user
-    profile = user.profile
+@api_view(['POST'])
+def login(request):
+    """Login using Neo4j"""
+    username = request.data.get('username')
+    password = request.data.get('password')
     
-    # Update user fields
-    user.first_name = request.data.get('first_name', user.first_name)
-    user.last_name = request.data.get('last_name', user.last_name)
-    user.email = request.data.get('email', user.email)
-    user.save()
-    
-    # Update profile fields
-    profile.bio = request.data.get('bio', profile.bio)
-    profile.tts_pitch = float(request.data.get('tts_pitch', profile.tts_pitch))
-    profile.tts_speed = float(request.data.get('tts_speed', profile.tts_speed))
-    profile.tts_energy = float(request.data.get('tts_energy', profile.tts_energy))
-    profile.save()
-    
-    return Response({
-        'success': True,
-        'user': UserSerializer(user).data,
-        'message': 'Profile updated successfully'
-    })
+    try:
+        user = NeoUser.nodes.get(username=username)
+        
+        if user.check_password(password):
+            # Get or create token
+            token = NeoAuthToken.nodes.filter(user_id=user.uid).first()
+            if not token:
+                token_key = secrets.token_hex(20)
+                token = NeoAuthToken(key=token_key, user_id=user.uid)
+                token.save()
+            
+            return Response({
+                'success': True,
+                'user': {
+                    'id': user.uid,
+                    'username': user.username,
+                    'email': user.email
+                },
+                'token': token.key
+            })
+        else:
+            return Response({
+                'success': False,
+                'errors': {'detail': 'Invalid credentials'}
+            }, status=401)
+            
+    except NeoUser.DoesNotExist:
+        return Response({
+            'success': False,
+            'errors': {'detail': 'Invalid credentials'}
+        }, status=401)
