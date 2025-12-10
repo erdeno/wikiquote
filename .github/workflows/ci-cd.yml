@@ -105,7 +105,7 @@ jobs:
         location: germanywestcentral
         dns-name-label: wikiquote-backend
         ports: 8000
-        environment-variables: NEO4J_URI=${{ secrets.NEO4J_URI }} NEO4J_USER=${{ secrets.NEO4J_USER }} NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }} DJANGO_SETTINGS_MODULE=backend.settings PYTHONUNBUFFERED=1
+        environment-variables: NEO4J_URI=${{ secrets.NEO4J_URI }} NEO4J_USER=${{ secrets.NEO4J_USER }} NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }} DJANGO_SETTINGS_MODULE=backend.settings PYTHONUNBUFFERED=1 SECRET_KEY=${{ secrets.SECRET_KEY }}
         cpu: 1
         memory: 2
     
