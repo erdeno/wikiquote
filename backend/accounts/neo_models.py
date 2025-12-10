@@ -1,7 +1,7 @@
 from neomodel import (
     StructuredNode, StringProperty, EmailProperty, 
     DateTimeProperty, IntegerProperty, FloatProperty,
-    RelationshipTo, UniqueIdProperty
+    RelationshipTo, UniqueIdProperty, BooleanProperty
 )
 from django.contrib.auth.hashers import make_password, check_password
 from datetime import datetime
@@ -11,13 +11,13 @@ class NeoUser(StructuredNode):
     uid = UniqueIdProperty()
     username = StringProperty(unique_index=True, required=True)
     email = EmailProperty(unique_index=True)
-    password = StringProperty(required=True)  # Hashed
+    password = StringProperty(required=True)
     first_name = StringProperty(default='')
     last_name = StringProperty(default='')
-    is_active = BooleanProperty(default=True)
+    is_active = BooleanProperty(default=True)  # Fixed: Added BooleanProperty
     date_joined = DateTimeProperty(default_now=True)
     
-    # User Profile fields (merged)
+    # Profile fields
     tts_voice_type = StringProperty(default='american')
     tts_pitch = FloatProperty(default=1.0)
     tts_speed = FloatProperty(default=1.0)
@@ -26,21 +26,15 @@ class NeoUser(StructuredNode):
     queries_count = IntegerProperty(default=0)
     last_query = DateTimeProperty()
     
-    # Relationships
-    saved_quotes = RelationshipTo('Quote', 'SAVED')
-    
     def set_password(self, raw_password):
-        """Hash and set password"""
         self.password = make_password(raw_password)
         self.save()
     
     def check_password(self, raw_password):
-        """Check password"""
         return check_password(raw_password, self.password)
     
     @classmethod
     def create_user(cls, username, email, password, **extra_fields):
-        """Create new user"""
         user = cls(
             username=username,
             email=email,
@@ -52,7 +46,7 @@ class NeoUser(StructuredNode):
 
 
 class NeoAuthToken(StructuredNode):
-    """Neo4j Token model"""
+    """Auth token"""
     key = StringProperty(unique_index=True, required=True)
-    user_id = StringProperty(required=True)  # Link to NeoUser uid
+    user_id = StringProperty(required=True)
     created = DateTimeProperty(default_now=True)

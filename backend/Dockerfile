@@ -34,9 +34,5 @@ ENV DJANGO_SETTINGS_MODULE=backend.settings
 # Expose port
 EXPOSE 8000
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-    CMD curl -f http://localhost:8000/api/v1/quotes/search/?q=test || exit 1
-
-# Start command (no migrations needed - using Neo4j only)
-CMD ["sh", "-c", "python manage.py setup_neo4j && gunicorn backend.wsgi:application --bind 0.0.0.0:8000 --workers 2 --timeout 120 --log-level debug"]
+# Start without setup_neo4j command (constraints created automatically on first use)
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--log-level", "debug"]

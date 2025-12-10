@@ -14,6 +14,7 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 import sys
+from neomodel import config
 
 load_dotenv()
 
@@ -120,9 +121,14 @@ DATABASES = {
     }
 }
 
-NEOMODEL_NEO4J_BOLT_URL = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
-NEOMODEL_SIGNALS = True
-NEOMODEL_FORCE_TIMEZONE = True
+# Neo4j Configuration
+NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
+NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
+NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', 'password')
+# Configure neomodel
+config.DATABASE_URL = f"{NEO4J_URI.replace('neo4j+s://', 'bolt+s://')}?user={NEO4J_USER}&password={NEO4J_PASSWORD}"
+config.AUTO_INSTALL_LABELS = True
+config.FORCE_TIMEZONE = True
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
