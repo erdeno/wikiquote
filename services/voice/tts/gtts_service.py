@@ -101,7 +101,7 @@ class GTTSService:
             
             try:
                 # ✅ Apply pitch and speed from parameters
-                pitch_cents = (final_pitch - 1.0) * 100  # Convert pitch multiplier to cents
+                pitch_cents = final_pitch * 100  # Convert semitones to cents
                 
                 cmd = [
                     'ffmpeg', '-i', tmp_mp3,
