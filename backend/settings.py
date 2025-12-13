@@ -37,6 +37,8 @@ SECRET_KEY = os.environ.get(
 DEBUG = True
 
 ALLOWED_HOSTS = [
+    "localhost",
+    "127.0.0.1",
     "9.141.103.203",
     "wikiquote-backend.germanywestcentral.azurecontainer.io",
 ]
