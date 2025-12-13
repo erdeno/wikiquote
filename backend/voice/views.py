@@ -182,9 +182,6 @@ def synthesize_speech(request):
             text, 
             speaker_id=speaker_id,
             voice_type=voice_type,
-            pitch=pitch,  
-            speed=speed,  
-            energy=energy 
         )
         
         if audio_bytes:
