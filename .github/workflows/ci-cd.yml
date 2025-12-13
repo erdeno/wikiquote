@@ -10,16 +10,16 @@ jobs:
   # Job 1: Run Tests
   test:
     runs-on: ubuntu-latest
-    
+
     steps:
     - name: Checkout code
       uses: actions/checkout@v3
-    
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
-    
+
     - name: Cache pip dependencies
       uses: actions/cache@v3
       with:
@@ -27,17 +27,22 @@ jobs:
         key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
         restore-keys: |
           ${{ runner.os }}-pip-
-    
+
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
-    
+
     - name: Run Django tests
       env:
         NEO4J_URI: ${{ secrets.NEO4J_URI }}
         NEO4J_USER: ${{ secrets.NEO4J_USER }}
         NEO4J_PASSWORD: ${{ secrets.NEO4J_PASSWORD }}
+        DB_NAME: ${{ secrets.DB_NAME }}
+        DB_USER: ${{ secrets.DB_USER }}
+        DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+        DB_HOST: ${{ secrets.DB_HOST }}
+        DB_PORT: ${{ secrets.DB_PORT }}
         DJANGO_SETTINGS_MODULE: backend.settings
         PYTHONPATH: ${{ github.workspace }}
       run: |
@@ -105,7 +110,7 @@ jobs:
         location: germanywestcentral
         dns-name-label: wikiquote-backend
         ports: 8000
-        environment-variables: NEO4J_URI=${{ secrets.NEO4J_URI }} NEO4J_USER=${{ secrets.NEO4J_USER }} NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }} DJANGO_SETTINGS_MODULE=backend.settings PYTHONUNBUFFERED=1 SECRET_KEY=${{ secrets.SECRET_KEY }}
+        environment-variables: NEO4J_URI=${{ secrets.NEO4J_URI }} NEO4J_USER=${{ secrets.NEO4J_USER }} NEO4J_PASSWORD=${{ secrets.NEO4J_PASSWORD }} DB_NAME=${{ secrets.DB_NAME }} DB_USER=${{ secrets.DB_USER }} DB_PASSWORD=${{ secrets.DB_PASSWORD }} DB_HOST=${{ secrets.DB_HOST }} DB_PORT=${{ secrets.DB_PORT }} DJANGO_SETTINGS_MODULE=backend.settings PYTHONUNBUFFERED=1 SECRET_KEY=${{ secrets.SECRET_KEY }}
         cpu: 1
         memory: 2
     

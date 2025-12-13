@@ -2,7 +2,7 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies (added libpq-dev for PostgreSQL)
 RUN apt-get update && apt-get install -y \
     gcc \
     g++ \
@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     libsndfile1 \
     git \
     curl \
+    libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
@@ -21,10 +22,10 @@ COPY backend/ /app/backend/
 COPY services/ /app/services/
 COPY manage.py /app/
 
-# Create necessary directories and files
-RUN mkdir -p /app/backend/staticfiles /root/.cache/huggingface && \
-    echo '{}' > /app/speaker_embeddings.json && \
-    echo '{}' > /app/tts_preferences.json
+# Create necessary files and directories (removed db.sqlite3 creation)
+RUN echo '{}' > /app/speaker_embeddings.json && \
+    echo '{}' > /app/tts_preferences.json && \
+    mkdir -p /app/backend/media /app/backend/static /app/backend/staticfiles /root/.cache/huggingface
 
 # Set environment variables
 ENV PYTHONPATH=/app
