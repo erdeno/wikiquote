@@ -2,12 +2,13 @@ from gtts import gTTS
 import subprocess
 import tempfile
 import os
-from typing import Optional, List, Dict
+from typing import Optional
 import json
 
 class GTTSService:
     """
-    Google TTS with pitch/speed manipulation for voice variety
+    Google TTS with speed manipulation for voice variety
+    NOTE: Pitch manipulation removed to prevent chipmunk effect
     """
     
     def __init__(self):
@@ -24,17 +25,18 @@ class GTTSService:
         
         self.is_multi_speaker = True  # We simulate it
         
-        # Voice configurations (pitch in semitones, speed multiplier)
+        # Voice configurations (speed multiplier ONLY - no pitch to avoid chipmunk effect)
+        # Voice variety comes from gTTS's different accents/TLDs and subtle speed changes
         self.voice_configs = {
-            'american': {'pitch': 3, 'speed': 0.95, 'lang': 'en', 'tld': 'com'},
-            'uk': {'pitch': -5, 'speed': 0.90, 'lang': 'en', 'tld': 'co.uk'},
-            'mexican': {'pitch': -4, 'speed': 0.92, 'lang': 'es', 'tld': 'com.mx'},
-            'african': {'pitch': 3, 'speed': 1.05, 'lang': 'en', 'tld': 'com.ng'},
-            'indian': {'pitch': 4, 'speed': 1.08, 'lang': 'en', 'tld': 'co.in'},
-            'irish': {'pitch': 5, 'speed': 1.10, 'lang': 'en', 'tld': 'ie'},
-            'french': {'pitch': 5, 'speed': 1.10, 'lang': 'fr', 'tld': 'fr'},
-            'italian': {'pitch': -5, 'speed': 0.90, 'lang': 'it', 'tld': 'it'},
-            'german': {'pitch': 5, 'speed': 1.10, 'lang': 'de', 'tld': 'de'},
+            'american': {'speed': 1.0, 'lang': 'en', 'tld': 'com'},
+            'uk': {'speed': 0.95, 'lang': 'en', 'tld': 'co.uk'},
+            'mexican': {'speed': 0.98, 'lang': 'es', 'tld': 'com.mx'},
+            'african': {'speed': 1.03, 'lang': 'en', 'tld': 'com.ng'},
+            'indian': {'speed': 1.05, 'lang': 'en', 'tld': 'co.in'},
+            'irish': {'speed': 1.02, 'lang': 'en', 'tld': 'ie'},
+            'french': {'speed': 0.97, 'lang': 'fr', 'tld': 'fr'},
+            'italian': {'speed': 0.96, 'lang': 'it', 'tld': 'it'},
+            'german': {'speed': 0.98, 'lang': 'de', 'tld': 'de'},
         }
         
         self.user_preferences = {}
@@ -62,35 +64,40 @@ class GTTSService:
                            pitch: float = 1.0, speed: float = 1.0, energy: float = 1.0):
         self.user_preferences[speaker_id] = {
             'voice_type': voice_type,
-            'pitch': pitch,
+            'pitch': pitch,  # Kept for API compatibility but ignored
             'speed': speed,
             'energy': energy
         }
         self._save_preferences()
     
     def synthesize_to_file(self, text: str, output_path: str, 
-                      speaker_id: Optional[str] = None,
-                      voice_type: Optional[str] = None,
-                      pitch: float = None,
-                      speed: float = None,
-                      energy: float = None) -> bool:
+                          speaker_id: Optional[str] = None,
+                          voice_type: Optional[str] = None) -> bool:
         try:
-            # Get user preferences
             prefs = self.user_preferences.get(speaker_id, {})
             selected_voice = voice_type or prefs.get('voice_type', 'american')
+            
+            # Map old voice types to new accent-based ones
+            voice_mapping = {
+                'male_1': 'american',
+                'male_2': 'uk', 
+                'male_3': 'german',
+                'female_1': 'american',
+                'female_2': 'uk',
+                'female_3': 'irish'
+            }
+            selected_voice = voice_mapping.get(selected_voice, selected_voice)
+            
             config = self.voice_configs.get(selected_voice, self.voice_configs['american'])
             
-            # ✅ Use parameters if provided, otherwise fall back to config
-            final_pitch = pitch if pitch is not None else config['pitch']
-            final_speed = speed if speed is not None else config['speed']
-            
-            print(f"🎤 gTTS synthesis: {selected_voice} (pitch={final_pitch}, speed={final_speed})")
+            print(f"🎤 gTTS synthesis: {selected_voice} (speed={config['speed']})")
             
             # Generate with gTTS
             tts = gTTS(text=text, lang=config['lang'], tld=config['tld'], slow=False)
             
-            if not self.has_ffmpeg:
-                # Direct save without manipulation
+            # Check if we need speed manipulation
+            if not self.has_ffmpeg or abs(config['speed'] - 1.0) < 0.01:
+                # Direct save without manipulation if speed is ~1.0 or no ffmpeg
                 tts.save(output_path)
                 return True
             
@@ -100,12 +107,13 @@ class GTTSService:
                 tts.save(tmp_mp3)
             
             try:
-                # ✅ Apply pitch and speed from parameters
-                pitch_cents = final_pitch * 100  # Convert semitones to cents
+                # Apply ONLY speed with ffmpeg (NO pitch manipulation)
+                # Clamp speed to safe range for atempo (0.5 to 2.0)
+                safe_speed = max(0.5, min(2.0, config['speed']))
                 
                 cmd = [
                     'ffmpeg', '-i', tmp_mp3,
-                    '-af', f'asetrate=44100*2^({pitch_cents}/1200),atempo={final_speed},aresample=44100',
+                    '-af', f'atempo={safe_speed}',
                     '-y', output_path
                 ]
                 
@@ -127,7 +135,6 @@ class GTTSService:
             import traceback
             traceback.print_exc()
             return False
-
     
     def synthesize_to_bytes(self, text: str, speaker_id: Optional[str] = None,
                            voice_type: Optional[str] = None) -> Optional[bytes]:
@@ -144,29 +151,27 @@ class GTTSService:
             if os.path.exists(tmp_path):
                 os.unlink(tmp_path)
     
-    def get_available_voices(self) -> Dict:
+    def get_available_voices(self):
         return [
-            {'id': 'american', 'name': 'American Accent(US)', 'gender': 'female'},
-            {'id': 'african', 'name': 'African Accent(NG)', 'gender': 'female'},
-            {'id': 'uk', 'name': 'English Accent(UK)', 'gender': 'female'},
-            {'id': 'french', 'name': 'French Accent(FR)', 'gender': 'female'},
-            {'id': 'german', 'name': 'German Accent(DE)', 'gender': 'female'},
-            {'id': 'indian', 'name': 'Indian Accent(IN)', 'gender': 'female'},
-            {'id': 'irish', 'name': 'Irish Accent(IE)', 'gender': 'female'},
-            {'id': 'italian', 'name': 'Italian Accent(IT)', 'gender': 'male'},
-            {'id': 'mexican', 'name': 'Mexican Accent(MX)', 'gender': 'female'},
+            {'id': 'american', 'name': 'American Accent (US)', 'gender': 'female'},
+            {'id': 'african', 'name': 'African Accent (NG)', 'gender': 'female'},
+            {'id': 'uk', 'name': 'English Accent (UK)', 'gender': 'female'},
+            {'id': 'french', 'name': 'French Accent (FR)', 'gender': 'female'},
+            {'id': 'german', 'name': 'German Accent (DE)', 'gender': 'female'},
+            {'id': 'indian', 'name': 'Indian Accent (IN)', 'gender': 'female'},
+            {'id': 'irish', 'name': 'Irish Accent (IE)', 'gender': 'female'},
+            {'id': 'italian', 'name': 'Italian Accent (IT)', 'gender': 'male'},
+            {'id': 'mexican', 'name': 'Mexican Accent (MX)', 'gender': 'female'},
         ]
     
-    def get_user_preferences(self, speaker_id: str) -> Optional[dict]:
+    def get_user_preferences(self, speaker_id: str):
         return self.user_preferences.get(speaker_id)
     
-    def get_system_info(self) -> Dict:
-        info = {
+    def get_system_info(self):
+        return {
             'model': 'gTTS',
             'multi_speaker': True,
             'device': 'cloud',
             'has_ffmpeg': self.has_ffmpeg,
-            'voice_configs': self.voice_configs,
-            'total_speakers': len(self.voice_configs),
+            'voice_configs': self.voice_configs
         }
-        return info
