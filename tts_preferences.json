@@ -1,1 +1,8 @@
-{}
+{
+  "testuser": {
+    "voice_type": "american",
+    "pitch": 1.0,
+    "speed": 1.0,
+    "energy": 1.0
+  }
+}

@@ -345,7 +345,10 @@
         createApp({
             data() {
                 return {
-                    apiUrl: 'http://wikiquote-backend.germanywestcentral.azurecontainer.io:8000/api/v1',
+		    apiUrl: window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+        		? 'http://localhost:8000/api/v1'
+            		: 'http://wikiquote-backend.germanywestcentral.azurecontainer.io:8000/api/v1',
+        
                     activeTab: 'login',
                     isLoading: false,
                     isTransitioning: false,
