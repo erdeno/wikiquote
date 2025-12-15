@@ -137,5 +137,6 @@ jobs:
         location: germanywestcentral
         dns-name-label: wikiquote-ollama
         ports: 11434
+        environment-variables: OLLAMA_ORIGINS=* OLLAMA_HOST=0.0.0.0:11434
         cpu: 2
         memory: 4

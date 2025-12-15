@@ -113,37 +113,37 @@ REST_FRAMEWORK = {
 }
 
 # Use SQLite for local/test, PostgreSQL for production
-USE_SQLITE = os.environ.get('USE_SQLITE', 'True').lower() == 'true'
+USE_SQLITE = os.environ.get("USE_SQLITE", "True").lower() == "true"
 
 if USE_SQLITE:
     # SQLite for local development and testing
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': BASE_DIR / 'db.sqlite3',
+        "default": {
+            "ENGINE": "django.db.backends.sqlite3",
+            "NAME": BASE_DIR / "db.sqlite3",
         }
     }
 else:
     # PostgreSQL for production (Neon)
     DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('DB_NAME', 'neondb'),
-            'USER': os.environ.get('DB_USER', 'neondb_owner'),
-            'PASSWORD': os.environ.get('DB_PASSWORD', ''),
-            'HOST': os.environ.get('DB_HOST', 'localhost'),
-            'PORT': os.environ.get('DB_PORT', '5432'),
-            'OPTIONS': {
-                'sslmode': 'require',
+        "default": {
+            "ENGINE": "django.db.backends.postgresql",
+            "NAME": os.environ.get("DB_NAME", "neondb"),
+            "USER": os.environ.get("DB_USER", "neondb_owner"),
+            "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+            "HOST": os.environ.get("DB_HOST", "localhost"),
+            "PORT": os.environ.get("DB_PORT", "5432"),
+            "OPTIONS": {
+                "sslmode": "require",
             },
         }
     }
 
 
 # Neo4j Configuration
-NEO4J_URI = os.getenv('NEO4J_URI', 'bolt://localhost:7687')
-NEO4J_USER = os.getenv('NEO4J_USER', 'neo4j')
-NEO4J_PASSWORD = os.getenv('NEO4J_PASSWORD', 'password')
+NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
+NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "password")
 # Configure neomodel
 config.DATABASE_URL = f"{NEO4J_URI.replace('neo4j+s://', 'bolt+s://')}?user={NEO4J_USER}&password={NEO4J_PASSWORD}"
 config.AUTO_INSTALL_LABELS = True
