@@ -1201,6 +1201,20 @@
                     
                     this.user = JSON.parse(userStr);
                 },
+
+		cleanTextForTTS(text) {
+                    if (!text) return '';
+
+                    return text
+                        // Remove quotation marks
+                        .replace(/['"'"\"]/g, '')
+                        // Remove multiple spaces
+                        .replace(/\s+/g, ' ')
+                        // Remove special characters but keep basic punctuation
+                        .replace(/[^\w\s.,!?;:()\-]/g, '')
+                        // Trim whitespace
+                        .trim();
+                },
                 
                 async handleLogout() {
                     try {
@@ -1285,7 +1299,7 @@
                         timestamp: new Date().toLocaleTimeString()
                     });
 
-                    this.synthesizeWithAccent(this.response);
+                    this.synthesizeWithAccent(this.cleanTextForTTS(this.response));
                 },
 
                 hideAutocomplete() {
@@ -1438,7 +1452,7 @@
                             timestamp: new Date().toLocaleTimeString()
                         });
 
-                        await this.synthesizeWithAccent(responseText);
+                        await this.synthesizeWithAccent(this.cleanTextForTTS(responseText));
 
                         this.textQuery = '';
                     } catch (error) {
@@ -1549,7 +1563,9 @@
                     try {
                         // Use the selected accent from ttsPreferences
                         const voiceType = this.ttsPreferences.accent || 'american';
-                        
+
+			const cleanedText = this.cleanTextForTTS(text);
+
                         const response = await fetch(`${this.apiUrl}/voice/synthesize/`, {
                             method: 'POST',
                             headers: { 
@@ -1557,7 +1573,7 @@
                                 'Authorization': `Token ${this.authToken}`
                             },
                             body: JSON.stringify({ 
-                                text: text,
+                                text: cleanedText,
                                 voice_type: voiceType,  // ✅ Use selected accent
                                 pitch: this.ttsPreferences.pitch,
                                 speed: this.ttsPreferences.speed,
@@ -1589,7 +1605,7 @@
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                text: testText,
+                                text: this.cleanTextForTTS(testText),
                                 voice_type: this.ttsPreferences.voice_type
                             })
                         });
@@ -1632,7 +1648,7 @@
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                text: testText,
+                                text: this.cleanTextForTTS(testText),
                                 voice_type: accentId
                             })
                         });
@@ -1662,7 +1678,7 @@
                                 'Content-Type': 'application/json'
                             },
                             body: JSON.stringify({
-                                text: testText,
+                                text: this.cleanTextForTTS(testText),
                                 speaker_id: this.user.username
                             })
                         });
