@@ -97,10 +97,14 @@ def mock_speechbrain(mocker):
 
 @pytest.fixture
 def mock_tts(mocker):
-    """Mock Coqui TTS service"""
-    mock = mocker.patch('voice.tts.coqui_service.TTS')
-    mock_tts = mocker.MagicMock()
-    mock_tts.is_multi_speaker = True
-    mock_tts.tts_to_file.return_value = None
-    mock.return_value = mock_tts
-    return mock
+    """Mock gTTS service"""
+    # Mock gTTS class
+    mock_gtts = mocker.patch('services.voice.tts.gtts_service.gTTS')
+    mock_gtts_instance = mocker.MagicMock()
+    mock_gtts_instance.save.return_value = None
+    mock_gtts.return_value = mock_gtts_instance
+
+    # Mock subprocess (ffmpeg)
+    mocker.patch('services.voice.tts.gtts_service.subprocess.run')
+
+    return mock_gtts
