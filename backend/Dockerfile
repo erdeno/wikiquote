@@ -15,7 +15,7 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir --upgrade pip==23.3.1 setuptools wheel && \
+RUN pip install --no-cache-dir "setuptools<81" && \
     pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy application code
