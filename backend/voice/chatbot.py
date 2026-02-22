@@ -18,7 +18,7 @@ class QuoteChatbot:
             if llm_provider == 'ollama':
                 llm_config = {
                     'model': os.getenv('OLLAMA_MODEL', 'llama3.2:3b'),
-                    'base_url': os.getenv('OLLAMA_BASE_URL', 'http://localhost:11434')
+                    'base_url': os.getenv('OLLAMA_BASE_URL', 'http://ollama:11434')
                 }
             elif llm_provider == 'openai':
                 llm_config = {'api_key': os.getenv('OPENAI_API_KEY')}

@@ -15,7 +15,7 @@ class EmbeddingService:
         Args:
             model: Model name (default: nomic-embed-text)
         """
-        self.base_url = "http://localhost:11434"
+        self.base_url = "http://ollama:11434"
         self.model_name = model or "nomic-embed-text"
         
         try:

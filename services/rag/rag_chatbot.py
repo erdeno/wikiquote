@@ -27,7 +27,7 @@ class RAGChatbot:
             self.llm = LLMFactory.create(
                 "ollama",
                 model=llm_config.get('model', 'llama3.2:3b'),
-                base_url=llm_config.get('base_url', 'http://localhost:11434')
+                base_url=llm_config.get('base_url', 'http://ollama:11434')
             )
         elif llm_provider == "openai":
             self.llm = LLMFactory.create(

@@ -14,7 +14,7 @@ class LLMProvider(ABC):
 class OllamaProvider(LLMProvider):
     """Local LLM using Ollama"""
     
-    def __init__(self, model: str = "llama3.2:3b", base_url: str = "http://localhost:11434"):
+    def __init__(self, model: str = "llama3.2:3b", base_url: str = "http://ollama:11434"):
         self.model = model
         self.base_url = base_url
         
@@ -97,7 +97,7 @@ class LLMFactory:
         if provider == "ollama":
             return OllamaProvider(
                 model=kwargs.get('model', 'llama3.2:3b'),
-                base_url=kwargs.get('base_url', 'http://localhost:11434')
+                base_url=kwargs.get('base_url', 'http://ollama:11434')
             )
         else:
             raise ValueError(f"Unknown provider: {provider}")
