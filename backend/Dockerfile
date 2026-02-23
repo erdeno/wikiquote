@@ -1,41 +1,32 @@
 FROM python:3.10-slim
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
 WORKDIR /app
 
-# Install system dependencies (added libpq-dev for PostgreSQL)
+# Install system dependencies
 RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    ffmpeg \
-    libsndfile1 \
-    git \
-    curl \
-    libpq-dev \
+    gcc g++ ffmpeg libsndfile1 git curl libpq-dev \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt .
-RUN pip install --upgrade pip wheel && \
-    pip install "setuptools<82" && \
-    pip install --no-cache-dir -r requirements.txt gunicorn
+# Copy ONLY the dependency files first (better caching)
+COPY pyproject.toml uv.lock ./
+
+# Install dependencies using the lock file
+# --system installs to global site-packages (standard for Docker)
+# --frozen ensures we use the exact versions from uv.lock
+RUN uv pip install --system --frozen --no-build-isolation .
 
 # Copy application code
 COPY backend/ /app/backend/
 COPY services/ /app/services/
 COPY manage.py /app/
 
-# Create necessary files and directories (removed db.sqlite3 creation)
+# Setup directories
 RUN echo '{}' > /app/speaker_embeddings.json && \
     echo '{}' > /app/tts_preferences.json && \
     mkdir -p /app/backend/media /app/backend/static /app/backend/staticfiles /root/.cache/huggingface
 
-# Set environment variables
-ENV PYTHONPATH=/app
-ENV PYTHONUNBUFFERED=1
-ENV DJANGO_SETTINGS_MODULE=backend.settings
-
-# Expose port
+ENV PYTHONPATH=/app PYTHONUNBUFFERED=1 DJANGO_SETTINGS_MODULE=backend.settings
 EXPOSE 8000
 
-# Start without setup_neo4j command (constraints created automatically on first use)
-CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120", "--log-level", "debug"]
+CMD ["gunicorn", "backend.wsgi:application", "--bind", "0.0.0.0:8000", "--workers", "2", "--timeout", "120"]

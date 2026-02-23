@@ -20,20 +20,15 @@ jobs:
       with:
         python-version: '3.10'
 
-    - name: Cache pip dependencies
-      uses: actions/cache@v3
+    - name: Install uv
+      uses: astral-sh/setup-uv@v5
       with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
-        restore-keys: |
-          ${{ runner.os }}-pip-
+        enable-cache: true
 
     - name: Install dependencies
       run: |
-        python -m pip install --upgrade pip wheel
-        # Explicitly pin setuptools to a version that still has pkg_resources
-        python -m pip install "setuptools<82"
-        pip install -r requirements.txt
+        # Use sync to make the environment match the lock file exactly
+        uv sync --system --frozen --no-build-isolation
 
     - name: Run Django tests
       env:
