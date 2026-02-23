@@ -1,9 +1,48 @@
+# --- Environment / Secrets ---
 .env
+.venv/
 venv/
-data/
-migrations/
-__pycache__/
+ENV/
+.python-version
+# Keep uv.lock! Do NOT add it here.
+
+# --- Django Specific ---
 db.sqlite3
+db.sqlite3-journal
+media/
+staticfiles/
+static/
+# Usually we commit migrations, but ignore if you have a specific local-only need:
+# migrations/ 
+
+# --- Python / Build Artifacts ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
+.eggs/
+build/
+dist/
+wheels/
+*.so
+
+# --- Data & Models ---
 data/
 pretrained_models/
+speaker_embeddings.json
+tts_preferences.json
+
+# --- Testing & Coverage ---
 htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache/
+.pytest_cache/
+
+# --- System / IDE ---
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
