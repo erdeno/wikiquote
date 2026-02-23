@@ -26,6 +26,13 @@ RUN echo '{}' > /app/speaker_embeddings.json && \
     echo '{}' > /app/tts_preferences.json && \
     mkdir -p /app/backend/media /app/backend/static /app/backend/staticfiles /root/.cache/huggingface
 
+# Add the virtual environment's bin folder to the PATH 
+# so 'gunicorn' and 'python' commands find the uv-installed versions.
+ENV PATH="/app/.venv/bin:$PATH"
+
+# Copy application code
+COPY . .
+
 ENV PYTHONPATH=/app PYTHONUNBUFFERED=1 DJANGO_SETTINGS_MODULE=backend.settings
 EXPOSE 8000
 
