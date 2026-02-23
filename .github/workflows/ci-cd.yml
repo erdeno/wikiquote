@@ -45,8 +45,8 @@ jobs:
         DJANGO_SETTINGS_MODULE: backend.settings
         PYTHONPATH: ${{ github.workspace }}
       run: |
-        python manage.py migrate --noinput
-        pytest -v --tb=short --ignore=backend/tests/services/test_tts.py
+        uv run python manage.py migrate --noinput
+        uv run pytest -v --tb=short --ignore=backend/tests/services/test_tts.py
       continue-on-error: true
 
   # Job 2: Build Docker Images

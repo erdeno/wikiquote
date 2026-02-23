@@ -13,7 +13,7 @@ media/
 staticfiles/
 static/
 # Usually we commit migrations, but ignore if you have a specific local-only need:
-# migrations/ 
+migrations/ 
 
 # --- Python / Build Artifacts ---
 __pycache__/
