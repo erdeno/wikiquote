@@ -15,7 +15,9 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt gunicorn
+RUN pip install --no-cache-dir "pip==23.3.1" "setuptools<81" && \
+    pip install --no-cache-dir --no-build-isolation openai-whisper==20240930 && \
+    pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy application code
 COPY backend/ /app/backend/
