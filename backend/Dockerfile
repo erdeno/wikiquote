@@ -11,10 +11,10 @@ RUN apt-get update && apt-get install -y \
 # Copy ONLY the dependency files first (better caching)
 COPY pyproject.toml uv.lock ./
 
-# Install dependencies using the lock file
-# --system installs to global site-packages (standard for Docker)
-# --frozen ensures we use the exact versions from uv.lock
-RUN uv pip install --system --frozen --no-build-isolation .
+# We set the environment variable right before the command
+# --no-install-project is optional but often faster if you copy code later
+ENV UV_SYSTEM_PYTHON=1
+RUN uv sync --frozen --no-cache
 
 # Copy application code
 COPY backend/ /app/backend/

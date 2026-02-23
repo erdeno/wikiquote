@@ -28,7 +28,8 @@ jobs:
     - name: Install dependencies
       run: |
         # Use sync to make the environment match the lock file exactly
-        uv sync --system --frozen --no-build-isolation
+        export UV_SYSTEM_PYTHON=1
+        uv sync --frozen 
 
     - name: Run Django tests
       env:
