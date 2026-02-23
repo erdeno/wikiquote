@@ -15,8 +15,9 @@ RUN apt-get update && apt-get install -y \
 
 # Copy requirements and install Python dependencies
 COPY requirements.txt .
-RUN echo "setuptools<82" > /tmp/constraints.txt && \
-    pip install --no-cache-dir -c /tmp/constraints.txt -r requirements.txt gunicorn
+RUN pip install --upgrade pip wheel && \
+    pip install "setuptools<82" && \
+    pip install --no-cache-dir -r requirements.txt gunicorn
 
 # Copy application code
 COPY backend/ /app/backend/
