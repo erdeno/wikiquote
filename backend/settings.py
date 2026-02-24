@@ -82,6 +82,10 @@ CORS_ALLOWED_ORIGINS = [
     "http://72.144.87.107:8080",
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "http://wikiquote-backend.germanywestcentral.azurecontainer.io",
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 TEMPLATES = [
@@ -113,7 +117,7 @@ REST_FRAMEWORK = {
 }
 
 # Use SQLite for local/test, PostgreSQL for production
-USE_SQLITE = os.environ.get("USE_SQLITE", "True").lower() == "true"
+USE_SQLITE = os.environ.get("USE_SQLITE", "False").lower() == "true"
 
 if USE_SQLITE:
     # SQLite for local development and testing
